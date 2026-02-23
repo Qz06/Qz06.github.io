@@ -4,6 +4,43 @@
   
     
     <entry>
+      <title>从0开始的Transformer</title>
+      <link href="/2026/02/23/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84Transformer/"/>
+      <url>/2026/02/23/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84Transformer/</url>
+      
+        <content type="html"><![CDATA[]]></content>
+      
+      
+      <categories>
+          
+          <category> 技术 </category>
+          
+          <category> AI </category>
+          
+          <category> NLP </category>
+          
+          <category> Transformer </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> NLP </tag>
+            
+            <tag> Transformer </tag>
+            
+            <tag> Pytorch </tag>
+            
+            <tag> 造轮子 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>BlogGuide</title>
       <link href="/2025/02/23/BlogGuide/"/>
       <url>/2025/02/23/BlogGuide/</url>
