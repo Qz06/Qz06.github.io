@@ -4,6 +4,35 @@
   
     
     <entry>
+      <title>英文版B站</title>
+      <link href="/2026/02/27/%E8%8B%B1%E6%96%87%E7%89%88B%E7%AB%99/"/>
+      <url>/2026/02/27/%E8%8B%B1%E6%96%87%E7%89%88B%E7%AB%99/</url>
+      
+        <content type="html"><![CDATA[<p>这几天发现英文版B站的翻译做得挺不错，从视频标题，弹幕，字幕到评论全都进行了翻译，并且相当地道，看得出是在尽量寻找英文互联网语境下的对应的词。比较有意思的一点是部分视频还适配了“AI语音翻译”，也就是把视频中的中文语音变成英文的，同时保留原来的音色语调。切换方法也很简单，直接在B站设置里切换语言就行。不知道刷英文版B站对学英语会不会有帮助呢…😂</p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 随笔 </category>
+          
+          <category> 生活 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 学习 </tag>
+            
+            <tag> bilibili </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>从1开始的LSTM</title>
       <link href="/2026/02/23/%E4%BB%8E1%E5%BC%80%E5%A7%8B%E7%9A%84LSTM/"/>
       <url>/2026/02/23/%E4%BB%8E1%E5%BC%80%E5%A7%8B%E7%9A%84LSTM/</url>
