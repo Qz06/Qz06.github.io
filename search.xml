@@ -55,15 +55,15 @@
       
         <tags>
             
-            <tag> PyTorch </tag>
-            
-            <tag> 造轮子 </tag>
-            
             <tag> NLP </tag>
             
             <tag> LSTM </tag>
             
             <tag> RNN </tag>
+            
+            <tag> PyTorch </tag>
+            
+            <tag> 造轮子 </tag>
             
         </tags>
       
@@ -94,15 +94,15 @@
       
         <tags>
             
+            <tag> PyTorch </tag>
+            
+            <tag> 造轮子 </tag>
+            
             <tag> CV </tag>
             
             <tag> ResNet </tag>
             
             <tag> CNN </tag>
-            
-            <tag> PyTorch </tag>
-            
-            <tag> 造轮子 </tag>
             
         </tags>
       
@@ -133,11 +133,11 @@
       
         <tags>
             
+            <tag> NLP </tag>
+            
             <tag> PyTorch </tag>
             
             <tag> 造轮子 </tag>
-            
-            <tag> NLP </tag>
             
             <tag> Transformer </tag>
             
