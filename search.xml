@@ -57,13 +57,13 @@
             
             <tag> NLP </tag>
             
-            <tag> LSTM </tag>
-            
-            <tag> RNN </tag>
-            
             <tag> PyTorch </tag>
             
             <tag> 造轮子 </tag>
+            
+            <tag> LSTM </tag>
+            
+            <tag> RNN </tag>
             
         </tags>
       
@@ -135,11 +135,11 @@
             
             <tag> NLP </tag>
             
+            <tag> Transformer </tag>
+            
             <tag> PyTorch </tag>
             
             <tag> 造轮子 </tag>
-            
-            <tag> Transformer </tag>
             
         </tags>
       
