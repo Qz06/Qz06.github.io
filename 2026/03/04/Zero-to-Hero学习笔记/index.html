@@ -1,0 +1,244 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Zero to Hero学习笔记 | Qz's Blog</title><meta name="author" content="Qz"><meta name="copyright" content="Qz"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="1.实现一个小型自动微分12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364656667686970717273747576777879808182838485868788899091929394959697cla">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Zero to Hero学习笔记">
+<meta property="og:url" content="https://www.cosmosh.ink/2026/03/04/Zero-to-Hero%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/index.html">
+<meta property="og:site_name" content="Qz&#39;s Blog">
+<meta property="og:description" content="1.实现一个小型自动微分12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364656667686970717273747576777879808182838485868788899091929394959697cla">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.cosmosh.ink/img/avatar.png">
+<meta property="article:published_time" content="2026-03-04T08:20:34.000Z">
+<meta property="article:modified_time" content="2026-03-05T14:50:59.160Z">
+<meta property="article:author" content="Qz">
+<meta property="article:tag" content="Transformer">
+<meta property="article:tag" content="PyTorch">
+<meta property="article:tag" content="造轮子">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.cosmosh.ink/img/avatar.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Zero to Hero学习笔记",
+  "url": "https://www.cosmosh.ink/2026/03/04/Zero-to-Hero%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/",
+  "image": "https://www.cosmosh.ink/img/avatar.png",
+  "datePublished": "2026-03-04T08:20:34.000Z",
+  "dateModified": "2026-03-05T14:50:59.160Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "Qz",
+      "url": "https://www.cosmosh.ink/"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.ico"><link rel="canonical" href="https://www.cosmosh.ink/2026/03/04/Zero-to-Hero%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":200,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Zero to Hero学习笔记',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 7.3.0"></head><body><div id="web_bg" style="background-image: url(/img/bg.png);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/avatar.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">11</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">18</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">15</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div><div class="menus_item"><a class="site-page" href="/gallery/"><i class="fa-fw fas fa-images"></i><span> 相册</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-rocket"></i><span> 资源</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/img/arc-bg.jpg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">Qz's Blog</span></a><a class="nav-page-title" href="/"><span class="site-name">Zero to Hero学习笔记</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div><div class="menus_item"><a class="site-page" href="/gallery/"><i class="fa-fw fas fa-images"></i><span> 相册</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-rocket"></i><span> 资源</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">Zero to Hero学习笔记</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-03-04T08:20:34.000Z" title="发表于 2026-03-04 16:20:34">2026-03-04</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-03-05T14:50:59.160Z" title="更新于 2026-03-05 22:50:59">2026-03-05</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/">技术</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/AI/">AI</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h2 id="1-实现一个小型自动微分"><a href="#1-实现一个小型自动微分" class="headerlink" title="1.实现一个小型自动微分"></a>1.实现一个小型自动微分</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br></pre></td><td class="code"><pre><span class="line">class Value:</span><br><span class="line">  </span><br><span class="line">  def __init__(self, data, _children=(), _op=&#x27;&#x27;, label=&#x27;&#x27;):</span><br><span class="line">    self.data = data</span><br><span class="line">    self.grad = 0.0</span><br><span class="line">    self._backward = lambda: None</span><br><span class="line">    self._prev = set(_children)</span><br><span class="line">    self._op = _op</span><br><span class="line">    self.label = label</span><br><span class="line"></span><br><span class="line">  def __repr__(self):</span><br><span class="line">    return f&quot;Value(data=&#123;self.data&#125;)&quot;</span><br><span class="line">  </span><br><span class="line">  def __add__(self, other):</span><br><span class="line">    other = other if isinstance(other, Value) else Value(other)</span><br><span class="line">    out = Value(self.data + other.data, (self, other), &#x27;+&#x27;)</span><br><span class="line">    </span><br><span class="line">    def _backward():</span><br><span class="line">      self.grad += 1.0 * out.grad</span><br><span class="line">      other.grad += 1.0 * out.grad</span><br><span class="line">    out._backward = _backward</span><br><span class="line">    </span><br><span class="line">    return out</span><br><span class="line"></span><br><span class="line">  def __mul__(self, other):</span><br><span class="line">    other = other if isinstance(other, Value) else Value(other)</span><br><span class="line">    out = Value(self.data * other.data, (self, other), &#x27;*&#x27;)</span><br><span class="line">    </span><br><span class="line">    def _backward():</span><br><span class="line">      self.grad += other.data * out.grad</span><br><span class="line">      other.grad += self.data * out.grad</span><br><span class="line">    out._backward = _backward</span><br><span class="line">      </span><br><span class="line">    return out</span><br><span class="line">  </span><br><span class="line">  def __pow__(self, other):</span><br><span class="line">    assert isinstance(other, (int, float)), &quot;only supporting int/float powers for now&quot;</span><br><span class="line">    out = Value(self.data**other, (self,), f&#x27;**&#123;other&#125;&#x27;)</span><br><span class="line"></span><br><span class="line">    def _backward():</span><br><span class="line">        self.grad += other * (self.data ** (other - 1)) * out.grad</span><br><span class="line">    out._backward = _backward</span><br><span class="line"></span><br><span class="line">    return out</span><br><span class="line">  </span><br><span class="line">  def __rmul__(self, other): # other * self</span><br><span class="line">    return self * other</span><br><span class="line"></span><br><span class="line">  def __truediv__(self, other): # self / other</span><br><span class="line">    return self * other**-1</span><br><span class="line"></span><br><span class="line">  def __neg__(self): # -self</span><br><span class="line">    return self * -1</span><br><span class="line"></span><br><span class="line">  def __sub__(self, other): # self - other</span><br><span class="line">    return self + (-other)</span><br><span class="line"></span><br><span class="line">  def __radd__(self, other): # other + self</span><br><span class="line">    return self + other</span><br><span class="line"></span><br><span class="line">  def tanh(self):</span><br><span class="line">    x = self.data</span><br><span class="line">    t = (math.exp(2*x) - 1)/(math.exp(2*x) + 1)</span><br><span class="line">    out = Value(t, (self, ), &#x27;tanh&#x27;)</span><br><span class="line">    </span><br><span class="line">    def _backward():</span><br><span class="line">      self.grad += (1 - t**2) * out.grad</span><br><span class="line">    out._backward = _backward</span><br><span class="line">    </span><br><span class="line">    return out</span><br><span class="line">  </span><br><span class="line">  def exp(self):</span><br><span class="line">    x = self.data</span><br><span class="line">    out = Value(math.exp(x), (self, ), &#x27;exp&#x27;)</span><br><span class="line">    </span><br><span class="line">    def _backward():</span><br><span class="line">      self.grad += out.data * out.grad # NOTE: in the video I incorrectly used = instead of +=. Fixed here.</span><br><span class="line">    out._backward = _backward</span><br><span class="line">    </span><br><span class="line">    return out</span><br><span class="line">  </span><br><span class="line">  </span><br><span class="line">  def backward(self):</span><br><span class="line">    </span><br><span class="line">    topo = []</span><br><span class="line">    visited = set()</span><br><span class="line">    def build_topo(v):</span><br><span class="line">      if v not in visited:</span><br><span class="line">        visited.add(v)</span><br><span class="line">        for child in v._prev:</span><br><span class="line">          build_topo(child)</span><br><span class="line">        topo.append(v)</span><br><span class="line">    build_topo(self)</span><br><span class="line">    </span><br><span class="line">    self.grad = 1.0</span><br><span class="line">    for node in reversed(topo):</span><br><span class="line">      node._backward()</span><br></pre></td></tr></table></figure>
+<ol>
+<li><ul>
+<li>这是一个很简单的python类，PyTorch底层也是这样实现的吗？</li>
+<li>是的，PyTorch也是通过类似的方式实现自动微分的，但它在底层是使用C++和CUDA实现的，为了提升程序的计算性能。PyTorch使用了一个叫做Autograd的系统，它通过构建计算图来跟踪操作，并在反向传播时计算梯度。</li>
+</ul>
+</li>
+<li><ul>
+<li>Value类的设计思路？</li>
+<li>神经网络中参数的优化依赖梯度下降，而梯度下降依赖于损失对每个参数的梯度。这一梯度的计算是通过微分的链式法则实现的，简单来讲，损失对当前变量的梯度，就等于损失对当前变量的父节点的梯度乘以父节点对当前变量的梯度。因此，我们在每个节点内部保存了该节点的所有孩子节点（self._prev），以及这些孩子节点进行的运算（self._op）以计算当前节点对孩子节点的梯度，还保存了当前节点自身的梯度（self.grad），二者相乘，便可以得到当前节点的孩子节点的梯度。但这里有一个问题：当前节点梯度的计算（可能）依赖于当前节点的兄弟节点以及当前节点的父节点，因此Value类的梯度计算方法<code>_backward</code>无法计算当前节点(self)的梯度，它只能计算当前节点的孩子节点的梯度。也就是说，Value类对象的<code>_backward</code>属性是一个函数（方法），该函数的作用是给当前节点的孩子节点的梯度赋值（实际上是累加+&#x3D;）。因此，链上的第一个节点（即损失L）的梯度是没有人给它赋值的，我们直接在<code>backward</code>方法中将其显式赋值为1.0。</li>
+</ul>
+</li>
+<li><ul>
+<li>为什么要进行拓扑排序？为什么不递归（如DFS，BFS）计算链上节点的梯度？</li>
+<li>从数学上讲，由于梯度的累加设计，使用不带visited标记的DFS也可以实现梯度的计算。例如：</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">def _backward(self):</span><br><span class="line">  for child in self._prev:</span><br><span class="line">    child.grad += self.grad * child._op_grad(self)</span><br><span class="line">    child._backward()</span><br></pre></td></tr></table></figure>
+<ul>
+<li>但是，考虑两条路线，均从O出发，最终到达L：(1)O-&gt;X-&gt;Y-&gt;A-&gt;B-&gt;C-&gt;D-&gt;E-&gt;F-&gt;L;(2)O-&gt;X-&gt;Y-&gt;A-&gt;D-&gt;L。如果使用上述的DFS方法，会导致重复计算节点A及其之前的节点梯度，这一冗余计算是指数级的，因此我们需要使用其他方法来处理“同一节点出现在多条路径”的问题。这里我们使用拓扑排序，保证每个节点的所有父节点梯度一定先于该节点的梯度被计算，这样就在最大程度上减少了冗余计算。值得一提的是，这里的拓扑排序算法是基于DFS实现的，而不是一般的Kahn算法（维护入度&#x3D;0的队列），用DFS算法可行的原因是，DFS的本质是沿着一条路径一直走到尽头，因此使用“后序遍历”（topo.append(v)在递归后面）可以实现拓扑排序的效果，且代码更简洁。</li>
+</ul>
+</li>
+<li><ul>
+<li>为什么_backward方法中是累加（+&#x3D;）而不是直接赋值（&#x3D;）？</li>
+<li>这么做的目的很显然，从上面的例子也可以看出来。如果一个节点参与了多条路径的计算（有环），那么它的梯度应该是来自多条路径的梯度之和，如果直接赋值，那么就会覆盖之前计算的梯度，导致最终的梯度不正确。这也是为什么PyTorch中的梯度是累加的，而不是直接赋值的，因此在每次反向传播之前，通常需要将梯度清零（例如optimizer.zero_grad()）。</li>
+</ul>
+</li>
+</ol>
+<h2 id="2-Transformer"><a href="#2-Transformer" class="headerlink" title="2.Transformer"></a>2.Transformer</h2><ol>
+<li><ul>
+<li><p>PyTorch中的buffer是什么？有什么用？</p>
+</li>
+<li><p>pytorch中，一个 nn.Module 通常包含两种数据：Parameters（参数） 和 Buffers（缓冲区）。然而，与Parameters不同，buffer并不是一个专门的pytorch类，它本质上是一个带标记的特殊张量，用以保存那些不需要梯度下降更新，但又是模型状态一部分的张量，例如模型的均值和方差（在BatchNorm中），或者是一些预计算的常量（例如位置编码，掩码等）。在创建一个nn.Module类时，通过<code>self.register_buffer(&#39;name&#39;, tensor)</code>将该张量注册为buffer。它的主要作用有三点：</p>
+<ul>
+<li><p>自动跟随设备移动： 当你调用 model.to(‘cuda’) 时，所有注册为 buffer 的张量会和 parameter 一起自动搬运到 GPU 上。</p>
+</li>
+<li><p>自动序列化（保存&#x2F;加载）： 当你执行 torch.save(model.state_dict(), …) 时，buffer 会被包含在字典中。下次加载模型时，它们会自动恢复。</p>
+</li>
+<li><p>不参与梯度计算： 默认情况下，注册的 buffer 不会被 model.parameters() 返回，因此优化器不会去更新它。</p>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th><strong>特性</strong></th>
+<th><strong>普通 Python 变量 (self.x)</strong></th>
+<th><strong>使用 register_buffer</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>设备同步</strong></td>
+<td>不会自动移动。模型在 GPU，它可能还在 CPU，报错！</td>
+<td><strong>自动同步</strong>。模型去哪它去哪。</td>
+</tr>
+<tr>
+<td><strong>保存加载</strong></td>
+<td><code>state_dict</code> 不含此项，模型重启后它可能变回初始值。</td>
+<td><strong>自动持久化</strong>。随模型文件一起保存。</td>
+</tr>
+<tr>
+<td><strong>分布式训练</strong></td>
+<td>在多卡同步时，可能导致状态不一致。</td>
+<td><strong>易于管理</strong>。PyTorch 框架知道它的存在。</td>
+</tr>
+</tbody></table>
+<ol start="2">
+<li><ul>
+<li>Transformer为什么使用残差连接？</li>
+<li>这是一个相当深入的问题，实际上，残差连接在各种网络中都是一个相当通用且有效的设计思想，有很多这方面的研究，这里只简单列举几个原因：首先，随着网络层数增加，梯度在与每一层的参数相乘的过程中会逐渐变小，产生梯度消失问题，通过引入残差连接，即output&#x3D;input+F(input)，这使得输出的梯度为1+F’(input)，即使F’(input)很小，输出的梯度也不会消失。其次，在传统模型中，随着层数不断增加，误差可能反而会变大，因此我们希望增加层数至少不会让模型变得更差，也就是新增的层数对原输出没有任何影响，即恒等映射。在这种情况下，模型会学习到F(input)&#x3D;0，那么该层的输出就等于输入，这样，随着新层的加入，要么模型性能得以改善，要么性能保持不变，而不会变差，这样我们就保证了模型一定是在往更好的方向发展。最后，残差连接还可以看作是一种特征融合的方式，它允许模型在不同层次上学习不同的特征，并将它们融合在一起，这样可以提高模型的表达能力和泛化能力。</li>
+</ul>
+</li>
+<li><ul>
+<li>为什么现代transformer要颠倒add和norm的顺序？(Post-LN-&gt;Pre-LN)</li>
+<li>这是一个相当有争议的问题，实际上Post-LN和Pre-LN各有优缺点，取决于具体的应用场景和需求。简单来说，Post-LN中的原输入X在LN内部，参与LN梯度的计算，可能导致梯度模长过大，在训练和预热阶段模型容易发散；而Pre-LN中的原输入X在LN外部，不参与LN梯度的计算，数值更稳定，训练和预热阶段不容易发散，实际上，Pre-LN在所有层之间为输入X构建了一条不受阻碍的线性通道。但是，经过精细的训练，Post-LN的性能上限略优于Pre-LN。Post-LN敏感但性能好，Pre-LN稳定但性能略逊。</li>
+</ul>
+</li>
+</ol>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://www.cosmosh.ink">Qz</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://www.cosmosh.ink/2026/03/04/Zero-to-Hero%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">https://www.cosmosh.ink/2026/03/04/Zero-to-Hero%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://www.cosmosh.ink" target="_blank">Qz's Blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Transformer/">Transformer</a><a class="post-meta__tags" href="/tags/PyTorch/">PyTorch</a><a class="post-meta__tags" href="/tags/%E9%80%A0%E8%BD%AE%E5%AD%90/">造轮子</a></div><div class="post-share"><div class="social-share" data-image="/img/avatar.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related  no-desc" href="/2026/03/02/%E7%9B%AE%E6%A0%87%E5%AF%BC%E5%90%91/" title="目标导向，长期主义与自我"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">目标导向，长期主义与自我</div></div></div></a><a class="pagination-related" href="/2026/03/04/%E4%B8%BA%E4%BB%80%E4%B9%88%E5%86%99%E5%8D%9A%E5%AE%A2/" title="为什么写博客"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">为什么写博客</div></div><div class="info-2"><div class="info-item-1">为什么写博客？ 笔记。帮助自己日后快速回忆起学过的内容 为有同样疑问的学习者答疑解惑（虽然现在都用AI了） 费曼学习法，在写博客的同时自己也在整理思路和语言，加深理解 博客在某种意义上也算是“养成系游戏”，可以从中获得成就感满足感，激励自己坚持下去  </div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/02/23/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84Transformer/" title="从0开始的Transformer"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-02-23</div><div class="info-item-2">从0开始的Transformer</div></div><div class="info-2"><div class="info-item-1">基于pytorch，从底层实现transformer1234import torchfrom torch import nnimport mathimport re   1device=torch.device(&#x27;mps&#x27;)  读取数据集，这里使用”time machine” 12345def read_time_machine():    # 这里假设你已经有了 txt 文件，或者直接从网络下载    with open(&#x27;timemachine.txt&#x27;, &#x27;r&#x27;) as f:        lines = f.readlines()    return [re.sub(&#x27;[^A-Za-z]+&#x27;, &#x27; &#x27;, line).strip().lower() for line in...</div></div></div></a><a class="pagination-related" href="/2026/02/23/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84ResNet/" title="从0开始的ResNet"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-02-23</div><div class="info-item-2">从0开始的ResNet</div></div><div class="info-2"><div class="info-item-1">123456789101112131415161718192021222324import torchimport torchvisionimport torchvision.transforms as transformsimport torch.nn as nntransform_train=transforms.Compose([    transforms.RandomCrop(32,padding=4),    transforms.RandomHorizontalFlip(),    transforms.ToTensor(),    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),])transform_test=transforms.Compose([    transforms.ToTensor(),    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994,...</div></div></div></a><a class="pagination-related" href="/2026/02/23/%E4%BB%8E1%E5%BC%80%E5%A7%8B%E7%9A%84LSTM/" title="从1开始的LSTM"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-02-23</div><div class="info-item-2">从1开始的LSTM</div></div><div class="info-2"><div class="info-item-1">为什么是“从1开始”？因为RNN的逻辑实在太绕，而且正逐渐被Transformer取代，所以我直接调用了nn.LSTM，重点在于数据集处理和训练，预测函数 123456789101112131415161718192021222324252627282930import torchfrom torch import nnimport collectionsimport reclass SimpleRNNModel(nn.Module):    def __init__(self, vocab_size, num_hiddens):        super().__init__()        self.num_hiddens = num_hiddens        # 1. Embedding 层：把字符 ID 转成稠密向量        self.embedding = nn.Embedding(vocab_size, num_hiddens)        # 2. RNN 层：核心循环动力        self.rnn = nn.LSTM(num_hiddens,...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/avatar.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Qz</div><div class="author-info-description">Жизнь полюбить больше, чем смысл ее? — Непременно так, полюбить прежде логики...</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">11</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">18</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">15</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/Qz06"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/Qz06" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="/2791144859@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%AE%9E%E7%8E%B0%E4%B8%80%E4%B8%AA%E5%B0%8F%E5%9E%8B%E8%87%AA%E5%8A%A8%E5%BE%AE%E5%88%86"><span class="toc-number">1.</span> <span class="toc-text">1.实现一个小型自动微分</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Transformer"><span class="toc-number">2.</span> <span class="toc-text">2.Transformer</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/04/%E4%B8%BA%E4%BB%80%E4%B9%88%E5%86%99%E5%8D%9A%E5%AE%A2/" title="为什么写博客">为什么写博客</a><time datetime="2026-03-04T13:29:08.000Z" title="发表于 2026-03-04 21:29:08">2026-03-04</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/04/Zero-to-Hero%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" title="Zero to Hero学习笔记">Zero to Hero学习笔记</a><time datetime="2026-03-04T08:20:34.000Z" title="发表于 2026-03-04 16:20:34">2026-03-04</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/02/%E7%9B%AE%E6%A0%87%E5%AF%BC%E5%90%91/" title="目标导向，长期主义与自我">目标导向，长期主义与自我</a><time datetime="2026-03-02T14:16:15.000Z" title="发表于 2026-03-02 22:16:15">2026-03-02</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/02/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B-%E4%BA%8C/" title="提示词工程(二)">提示词工程(二)</a><time datetime="2026-03-02T08:45:59.000Z" title="发表于 2026-03-02 16:45:59">2026-03-02</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/02/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%B7%A5%E7%A8%8B-%E4%B8%80/" title="提示词工程(一)">提示词工程(一)</a><time datetime="2026-03-02T06:29:10.000Z" title="发表于 2026-03-02 14:29:10">2026-03-02</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2019 - 2026 By Qz</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.3.0</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.3.3</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><div class="js-pjax"></div><canvas class="fireworks" mobile="false"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/fireworks.min.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js"></script></div></div><script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":false},"log":false});</script></body></html>
