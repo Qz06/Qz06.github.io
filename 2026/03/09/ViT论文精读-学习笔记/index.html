@@ -1,13 +1,13 @@
-<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>ViT论文精读-学习笔记 | Qz's Blog</title><meta name="author" content="Qz"><meta name="copyright" content="Qz"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="原论文链接：https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;2010.11929原视频链接：https:&#x2F;&#x2F;www.bilibili.com&#x2F;video&#x2F;BV15P4y137jb 前言传统的计算机视觉任务通常使用卷积神经网络（CNN）来处理图像数据。然而，近年来，Transformer架构在自然语言处理（NLP）领域取得了巨大成功，引起了研究人员的兴趣，尝试将其应用于计算机视觉任务。Vision Tr">
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>ViT论文精读-学习笔记 | Qz's Blog</title><meta name="author" content="Qz"><meta name="copyright" content="Qz"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="原论文链接：https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;2010.11929原视频链接：https:&#x2F;&#x2F;www.bilibili.com&#x2F;video&#x2F;BV15P4y137jb CV常见任务对比    任务 目标 结果形式 是否区分个体 精细度    图像分类 识别类别 标签 (Label) 否 最低（全局）   目标检测 定位+识别 矩形框 (Box) 是 中等（区域）   语义分割 像素分类 类">
 <meta property="og:type" content="article">
 <meta property="og:title" content="ViT论文精读-学习笔记">
 <meta property="og:url" content="https://www.cosmosh.ink/2026/03/09/ViT%E8%AE%BA%E6%96%87%E7%B2%BE%E8%AF%BB-%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/index.html">
 <meta property="og:site_name" content="Qz&#39;s Blog">
-<meta property="og:description" content="原论文链接：https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;2010.11929原视频链接：https:&#x2F;&#x2F;www.bilibili.com&#x2F;video&#x2F;BV15P4y137jb 前言传统的计算机视觉任务通常使用卷积神经网络（CNN）来处理图像数据。然而，近年来，Transformer架构在自然语言处理（NLP）领域取得了巨大成功，引起了研究人员的兴趣，尝试将其应用于计算机视觉任务。Vision Tr">
+<meta property="og:description" content="原论文链接：https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;2010.11929原视频链接：https:&#x2F;&#x2F;www.bilibili.com&#x2F;video&#x2F;BV15P4y137jb CV常见任务对比    任务 目标 结果形式 是否区分个体 精细度    图像分类 识别类别 标签 (Label) 否 最低（全局）   目标检测 定位+识别 矩形框 (Box) 是 中等（区域）   语义分割 像素分类 类">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://www.cosmosh.ink/img/avatar.png">
 <meta property="article:published_time" content="2026-03-09T05:51:30.000Z">
-<meta property="article:modified_time" content="2026-03-09T08:32:35.928Z">
+<meta property="article:modified_time" content="2026-03-09T08:43:13.767Z">
 <meta property="article:author" content="Qz">
 <meta property="article:tag" content="ViT">
 <meta property="article:tag" content="Transformer">
@@ -21,7 +21,7 @@
   "url": "https://www.cosmosh.ink/2026/03/09/ViT%E8%AE%BA%E6%96%87%E7%B2%BE%E8%AF%BB-%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/",
   "image": "https://www.cosmosh.ink/img/avatar.png",
   "datePublished": "2026-03-09T05:51:30.000Z",
-  "dateModified": "2026-03-09T08:32:35.928Z",
+  "dateModified": "2026-03-09T08:43:13.767Z",
   "author": [
     {
       "@type": "Person",
@@ -162,7 +162,47 @@
   isHighlightShrink: false,
   isToc: true,
   pageType: 'post'
-}</script><meta name="generator" content="Hexo 7.3.0"></head><body><div id="web_bg" style="background-image: url(/img/bg.png);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/avatar.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">12</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">19</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">16</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div><div class="menus_item"><a class="site-page" href="/gallery/"><i class="fa-fw fas fa-images"></i><span> 相册</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-rocket"></i><span> 资源</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/img/arc-bg.jpg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">Qz's Blog</span></a><a class="nav-page-title" href="/"><span class="site-name">ViT论文精读-学习笔记</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div><div class="menus_item"><a class="site-page" href="/gallery/"><i class="fa-fw fas fa-images"></i><span> 相册</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-rocket"></i><span> 资源</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">ViT论文精读-学习笔记</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-03-09T05:51:30.000Z" title="发表于 2026-03-09 13:51:30">2026-03-09</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-03-09T08:32:35.928Z" title="更新于 2026-03-09 16:32:35">2026-03-09</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/">技术</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/AI/">AI</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/AI/CV/">CV</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/AI/CV/ViT/">ViT</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><p>原论文链接：<a target="_blank" rel="noopener" href="https://arxiv.org/abs/2010.11929">https://arxiv.org/abs/2010.11929</a><br>原视频链接：<a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV15P4y137jb">https://www.bilibili.com/video/BV15P4y137jb</a></p>
+}</script><meta name="generator" content="Hexo 7.3.0"></head><body><div id="web_bg" style="background-image: url(/img/bg.png);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/avatar.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">12</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">19</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">16</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div><div class="menus_item"><a class="site-page" href="/gallery/"><i class="fa-fw fas fa-images"></i><span> 相册</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-rocket"></i><span> 资源</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/img/arc-bg.jpg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">Qz's Blog</span></a><a class="nav-page-title" href="/"><span class="site-name">ViT论文精读-学习笔记</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div><div class="menus_item"><a class="site-page" href="/gallery/"><i class="fa-fw fas fa-images"></i><span> 相册</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-rocket"></i><span> 资源</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">ViT论文精读-学习笔记</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-03-09T05:51:30.000Z" title="发表于 2026-03-09 13:51:30">2026-03-09</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-03-09T08:43:13.767Z" title="更新于 2026-03-09 16:43:13">2026-03-09</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/">技术</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/AI/">AI</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/AI/CV/">CV</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/AI/CV/ViT/">ViT</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><p>原论文链接：<a target="_blank" rel="noopener" href="https://arxiv.org/abs/2010.11929">https://arxiv.org/abs/2010.11929</a><br>原视频链接：<a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV15P4y137jb">https://www.bilibili.com/video/BV15P4y137jb</a></p>
+<p><strong>CV常见任务对比</strong></p>
+<table>
+<thead>
+<tr>
+<th><strong>任务</strong></th>
+<th><strong>目标</strong></th>
+<th><strong>结果形式</strong></th>
+<th><strong>是否区分个体</strong></th>
+<th><strong>精细度</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>图像分类</strong></td>
+<td>识别类别</td>
+<td>标签 (Label)</td>
+<td>否</td>
+<td>最低（全局）</td>
+</tr>
+<tr>
+<td><strong>目标检测</strong></td>
+<td>定位+识别</td>
+<td>矩形框 (Box)</td>
+<td><strong>是</strong></td>
+<td>中等（区域）</td>
+</tr>
+<tr>
+<td><strong>语义分割</strong></td>
+<td>像素分类</td>
+<td>类别掩码 (Mask)</td>
+<td>否</td>
+<td>高（像素）</td>
+</tr>
+<tr>
+<td><strong>实例分割</strong></td>
+<td>个体像素分类</td>
+<td>实例掩码 (Mask)</td>
+<td><strong>是</strong></td>
+<td>最高（像素）</td>
+</tr>
+</tbody></table>
 <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>传统的计算机视觉任务通常使用卷积神经网络（CNN）来处理图像数据。然而，近年来，Transformer架构在自然语言处理（NLP）领域取得了巨大成功，引起了研究人员的兴趣，尝试将其应用于计算机视觉任务。Vision Transformer（ViT）是其中一个重要的工作，它将Transformer应用于图像分类任务，通过适当的数据预处理，ViT可以取得与传统CNN相媲美甚至更好的性能。此外，在一些特殊的极端情况下，ViT可以处理普通CNN无法解决的问题，例如图像遮挡，纹理去除，加入对抗性斑块，图像重组等。</p>
 <h1 id="ViT论文精读"><a href="#ViT论文精读" class="headerlink" title="ViT论文精读"></a>ViT论文精读</h1><ol>
 <li><ul>
@@ -183,12 +223,12 @@
 </li>
 </ol>
 <p>数据处理流程：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">输入图像224x224x3 -[分块]-&gt; 196x16x16x3(224x224/16x16=196) -[通过768-&gt;768的linear进行patch embedding]-&gt; 196x768(16x16x3=768) -[positional encoding与用于分类的虚拟头token&lt;cls&gt;]-&gt; 197x768 -[Transformer编码器]-&gt; 197x768 -[&lt;cls&gt;token进入768-&gt;num_classes的分类头]-&gt; 分类结果</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">输入图像224x224x3  </span><br><span class="line">-[分块]-&gt; 196x16x16x3(224x224/16x16=196)  </span><br><span class="line">-[通过768-&gt;768的linear进行patch embedding]-&gt; 196x768(16x16x3=768)  </span><br><span class="line">-[positional encoding与用于分类的虚拟头token&lt;cls&gt;]-&gt; 197x768  </span><br><span class="line">-[Transformer编码器]-&gt; 197x768  </span><br><span class="line">-[&lt;cls&gt;token进入768-&gt;num_classes的分类头]-&gt; 分类结果</span><br></pre></td></tr></table></figure>
 
 <ul>
 <li><p>除了加入特殊的全局语义token<code>&lt;cls&gt;</code>，最终将<code>&lt;cls&gt;</code>连到线性分类头以产生分类结果，也可以不加入<code>&lt;cls&gt;</code>，直接将Transformer编码器输出的每个token进行全局平均池化后输入分类头。</p>
 </li>
-<li><p>关于位置编码：经典的的Transformer使用1D的位置编码，假如编码的目标维度为d，那么这d个值全部用来表示原token在一维序列中的位置；而2D的位置编码，假如编码目标维度为d，那么这d个值的一半用来表示原patch在二维图像中的行位置，另一半用来表示原patch(token)在二维图像中的列位置，然后把行表示和列表示拼接起来形成d维位置编码；相对位置编码则是通过计算patch之间的相对位置关系来生成位置编码，而不是直接使用绝对位置。实际上，在ViT中，这三种位置编码方式的性能差异不大。</p>
+<li><p>关于位置编码：经典的Transformer使用1D的位置编码，假如编码的目标维度为d，那么这d个值全部用来表示原token在一维序列中的位置；而2D的位置编码，假如编码目标维度为d，那么这d个值的一半用来表示原patch在二维图像中的行位置，另一半用来表示原patch(token)在二维图像中的列位置，然后把行表示和列表示拼接起来形成d维位置编码；相对位置编码则是通过计算patch之间的相对位置关系来生成位置编码，而不是直接使用绝对位置。实际上，在ViT中，这三种位置编码方式的性能差异不大。</p>
 </li>
 <li><p>关于归纳偏置：ViT中的MLP是具有CNN的locality和translation invariance的，但是Attention部分缺乏这些归纳偏置，它是全局的。图片的2D信息ViT几乎没有使用（仅在patch encoding使用了），因此ViT在小规模数据上性能不如CNN；但是在大规模数据上，ViT通过注意力机制的优良特性，能够学习更丰富的特征表示来取得更好的性能。从这个角度看，ViT的潜力是巨大的。这也引出了混合的ViT架构，即先使用CNN提取局部特征，然后将这些特征输入到Transformer中进行全局建模，以结合两者的优势，该混合模型在某些场景下表现优于CNN和ViT。</p>
 </li>
