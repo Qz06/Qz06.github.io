@@ -4,11 +4,48 @@
   
     
     <entry>
+      <title>Swin Transformer论文精读-学习笔记</title>
+      <link href="/2026/03/09/Swin-Transformer%E8%AE%BA%E6%96%87%E7%B2%BE%E8%AF%BB-%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/"/>
+      <url>/2026/03/09/Swin-Transformer%E8%AE%BA%E6%96%87%E7%B2%BE%E8%AF%BB-%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/</url>
+      
+        <content type="html"><![CDATA[<p>原论文链接：<a href="https://arxiv.org/abs/2103.14030">https://arxiv.org/abs/2103.14030</a><br>原视频链接：<a href="https://www.bilibili.com/video/BV13L4y1475U">https://www.bilibili.com/video/BV13L4y1475U</a></p><h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>Swin Transformer，也就是Hierarchical Shifted Window Vision Transformer，是一种基于Transformer架构的计算机视觉模型，旨在解决传统Transformer在处理高分辨率图像时计算成本过高的问题。Swin Transformer通过引入窗口注意力机制和滑动窗口策略，有效地降低了计算复杂度，同时保持了强大的特征表达能力。Swin Transformer还在ViT的基础上，引入了类似传统CNN的分块的层级式结构，从而能够提取图像在不同尺度上的特征。此外，Swin Transformer在CV的绝大多数任务上都取得了优异的表现，再次证明了Transformer在CV领域的可行性与有效性，成为近年来计算机视觉领域的重要研究方向之一。</p><h1 id="Swin-Transformer论文精读"><a href="#Swin-Transformer论文精读" class="headerlink" title="Swin Transformer论文精读"></a>Swin Transformer论文精读</h1><ol><li><ul><li>将传统Transformer应用到视觉任务会面临哪些挑战？</li><li>首先是目标的尺度不统一，比如同样的“汽车”对象，在不同图片里的大小可能差距很大；然后是图像的高分辨率问题，过高的像素会导致输入Transformer的序列长度过长，难以计算。</li></ul></li><li><p>Swin Transformer的创作动机，是为了证明Transformer在CV领域可以作为一个通用的骨干网络，能够适用于所有的CV任务，包括分类，检测，分割，视频等，而不仅仅是图像分类任务。</p></li></ol><p><img src="/img/image-swin.png" alt="alt text"></p><ol start="3"><li><ul><li><p>ViT在CV任务中已经表现很好了，为什么还要使用Swin Transformer呢？</p></li><li><p>首先，ViT的一个明显缺陷（这也是Transformer的固有属性）是，由于它在patch embedding后使用多层连续的transformer编码器块，因此数据在经过这些块时，序列长度是保持不变的，就等于一开始划分出的patches数量，这就导致对于底层的数据来说，每个patch太大了，无法捕捉到足够细粒度的特征（如物体边缘），而对于顶层的数据来说，每个patch又太小了，这就导致patches数量很多，对于高分辨率图像来说，计算成本过高；对于图像中不同尺度的对象，ViT尝试使用固定大小的patch进行捕捉，但这显然不够灵活，无法适应不同尺度的对象，而Swin Transformer通过引入层级式结构和滑动窗口机制，能够像CNN一样不断通过下采样提取不同尺度的特征，更好地适应不同尺度的对象，动态调整每一层transformer块的输入序列长度，从而更有效地捕捉图像中的特征。此外，ViT每个注意力操作都是在全局范围的patches上进行的，这就导致了计算成本过高，而Swin Transformer通过引入窗口注意力机制，将计算复杂度从ViT的O(n^2)降低到O(n)，使得Swin Transformer能够处理更高分辨率的图像，同时保持了可接受的计算成本。</p><ul><li><p>为了解决ViT成本高的问题，为什么不直接把一开始的patch变大一点？</p></li><li><p>首先，过大的patch会导致每个patch包含的信息过多，无法捕捉到图像细节；其次，由于不同对象尺度不同，大patch将难以识别那些较小的对象；最后，ViT每一层都是固定大小的patch范围，导致缺乏从“局部细节”到“整体结构”的渐进过程。</p></li><li><p>Swin Transformer与传统CNN相比有何优势？</p></li><li><p>Swin Transformer虽然在整体架构和设计思路上很像CNN，但因为使用了注意力机制，Swin有三个显著的优势：1.CNN卷积核的参数是固定的。不管输入是什么，卷积核都用同样的权重去“套”它，是内容无关的，而Swin的注意力权重是根据输入内容动态计算出来的，是内容自适应的；2.CNN的感受野是受限的。每一层卷积只能看到周围有限范围内的像素，想要看到整张图，必须堆叠很多层，而Swin虽然也有窗口限制，但即使在最底层，一个窗口内的所有 Patch 都是一步到位互相连接的。通过移位窗口（Shifted Window），它扩大感受野的速度比 CNN 快得多，且联系更直接；3.CNN（如ResNet）存在明显的性能瓶颈，到了后期，无论你给它多少数据，它的性能提升非常缓慢，容易饱和，而Swin继承了 Transformer 的优良基因——极其抗饱和。只要你有足够大的数据集，Swin 的精度上限比 ResNet 高得多。</p></li><li><p>为什么Swin的计算复杂度是O(n)而ViT是O(n^2)？</p></li><li><p>简单来讲，ViT在每一层只做一次注意力汇聚，而传给该注意力的序列长度等于patches数量，也就是与图像尺寸成正比，因此每一层的计算复杂度是序列长度的平方，即O(n^2)；而Swin在每一层都要计算多个窗口内的注意力，每个窗口内的序列长度是固定的，与图像尺寸无关（此处应用了CNN的locality的归纳偏置，一个对象的不同部位往往是聚集在一起的，不会分散到各处，因此没必要用全局注意力），而窗口数量是与图像尺寸成正比的，因此每一层的计算复杂度是O(n)。</p></li></ul></li><li><p>当然，ViT的重大意义在于它没有对Transformer编码器做任何更改，仅仅是通过数据预处理就让Transformer能够处理图像数据，极大的揭示了Transformer在多模态模型的可能性；而Swin针对CV任务对架构做了针对性的更改，虽然牺牲了一定的通用性，但在CV任务上取得了更好的性能。</p></li></ul></li></ol><p><img src="/img/image-swin1.png" alt="alt text"><br><em>Shifted Window示意图</em></p><ol start="4"><li>模型架构</li></ol><p><img src="/img/image-swin2.png" alt="alt text"></p><p>数据处理流程：</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">输入图像(H,W,3)</span><br><span class="line">-[patch partition]-&gt; ((H/4),(W/4),48) (4x4x3=48)</span><br><span class="line">-[linear embedding]-&gt; ((H/4),(W/4),C) (C是模型的维度，通常是96,192,384,768等)</span><br><span class="line">-[Transformer编码器]-&gt; ((H/4),(W/4),C)</span><br><span class="line"></span><br><span class="line">-[patch merging]-&gt; ((H/8),(W/8),2C)</span><br><span class="line">-[Transformer编码器]-&gt; ((H/8),(W/8),2C)</span><br><span class="line"></span><br><span class="line">-[patch merging]-&gt; ((H/16),(W/16),4C)</span><br><span class="line">-[Transformer编码器]-&gt; ((H/16),(W/16),4C)</span><br><span class="line"></span><br><span class="line">-[patch merging]-&gt; ((H/32),(W/32),8C)</span><br><span class="line">-[Transformer编码器]-&gt; ((H/32),(W/32),8C)</span><br><span class="line"></span><br></pre></td></tr></table></figure><ul><li><p>以上是模型的主干部分，可以根据下游任务需要接入不同的头部，例如分类头，检测头，分割头等。Swin Transformer的主干部分是一个层级式结构，由四个阶段组成，每个阶段包含多个Transformer编码器块和一个patch merging层。每个阶段的输入输出尺寸逐渐减小，特征维度逐渐增加，从而能够提取不同尺度的特征。</p><p>  例如，如果要进行图片分类，可以在模型的主干部分后面加一个全局平均池化层和一个线性分类头；如果要进行目标检测，可以在模型的主干部分后面加一个FPN（Feature Pyramid Network）和一个检测头；如果要进行语义分割，可以在模型的主干部分后面加一个上采样模块和一个分割头等。</p></li><li><p>patch merging层的作用是对特征进行下采样和维度增加，类似于CNN中的池化层。它的处理流程：首先，按位置将输入特征图划分为不重叠的2x2块；然后，将每个块在特征维度上进行拼接，得到一个新的大小为原来一半的特征图，其中每个位置的特征维度是原来的4倍；最后，通过一个1x1卷积将特征维度减少为原来的2倍，从而实现下采样。</p></li></ul><p><img src="/image-pm.png" alt="alt text"></p><p>- </p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 技术 </category>
+          
+          <category> AI </category>
+          
+          <category> CV </category>
+          
+          <category> Swin Transformer </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> Swin Transformer </tag>
+            
+            <tag> Transformer </tag>
+            
+            <tag> CV </tag>
+            
+            <tag> PyTorch </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>ViT论文精读-学习笔记</title>
       <link href="/2026/03/09/ViT%E8%AE%BA%E6%96%87%E7%B2%BE%E8%AF%BB-%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/"/>
       <url>/2026/03/09/ViT%E8%AE%BA%E6%96%87%E7%B2%BE%E8%AF%BB-%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/</url>
       
-        <content type="html"><![CDATA[<p>原论文链接：<a href="https://arxiv.org/abs/2010.11929">https://arxiv.org/abs/2010.11929</a><br>原视频链接：<a href="https://www.bilibili.com/video/BV15P4y137jb">https://www.bilibili.com/video/BV15P4y137jb</a></p><p><strong>CV常见任务对比</strong></p><table><thead><tr><th><strong>任务</strong></th><th><strong>目标</strong></th><th><strong>结果形式</strong></th><th><strong>是否区分个体</strong></th><th><strong>精细度</strong></th></tr></thead><tbody><tr><td><strong>图像分类</strong></td><td>识别类别</td><td>标签 (Label)</td><td>否</td><td>最低（全局）</td></tr><tr><td><strong>目标检测</strong></td><td>定位+识别</td><td>矩形框 (Box)</td><td><strong>是</strong></td><td>中等（区域）</td></tr><tr><td><strong>语义分割</strong></td><td>像素分类</td><td>类别掩码 (Mask)</td><td>否</td><td>高（像素）</td></tr><tr><td><strong>实例分割</strong></td><td>个体像素分类</td><td>实例掩码 (Mask)</td><td><strong>是</strong></td><td>最高（像素）</td></tr></tbody></table><h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>传统的计算机视觉任务通常使用卷积神经网络（CNN）来处理图像数据。然而，近年来，Transformer架构在自然语言处理（NLP）领域取得了巨大成功，引起了研究人员的兴趣，尝试将其应用于计算机视觉任务。Vision Transformer（ViT）是其中一个重要的工作，它将Transformer应用于图像分类任务，通过适当的数据预处理，ViT可以取得与传统CNN相媲美甚至更好的性能。此外，在一些特殊的极端情况下，ViT可以处理普通CNN无法解决的问题，例如图像遮挡，纹理去除，加入对抗性斑块，图像重组等。</p><h1 id="ViT论文精读"><a href="#ViT论文精读" class="headerlink" title="ViT论文精读"></a>ViT论文精读</h1><ol><li><ul><li>将Transformer应用于视觉任务有什么难处？如何解决？</li><li>我们知道，Transformer的核心功能是处理序列数据，形状为(batch_size,seq_steps)或(batch_size,seq_steps,embedding_dim)。Transformer中最重要的自注意力本质上是序列中的每一个元素与所有其他元素进行交互（加权和）的过程，因此它是一个O(n^2)的操作。对于文本序列，我们可以将序列长度设为几百至一千，这在计算上是可行的。然而，对于图像数据，尤其是高分辨率图像，直接将图片拉直，每个像素作为一个序列元素会导致序列长度过长（224*224&#x3D;50176），从而使得计算成本变得不可接受。</li><li>ViT通过将图像划分为固定大小的非重叠块（patches）来解决这个问题，例如，如果在224x224的图像上使用16x16的块，那么序列长度将变为(224&#x2F;16)^2&#x3D;196。每个块被视为一个序列元素，并通过线性变换映射到一个固定维度的嵌入空间中。这种方法大大减少了序列长度，使得Transformer能够有效地处理图像数据。ViT的架构是相当简单的，主要由以下几个部分组成，实际上就是图像分块+标准Transformer编码器：<ul><li>Patch Embedding：将图像划分为固定大小的块，并将每个块展平后通过线性变换映射到一个固定维度的嵌入空间中。</li><li>Positional Encoding：由于Transformer没有内置的位置信息，因此需要添加位置编码来保留图像块之间的空间关系。</li><li>Transformer Encoder：由多个Transformer层组成，每层包含多头自注意力机制和前馈神经网络。</li><li>Classification Head：在Transformer编码器的输出上添加一个分类头，用于图像分类任务。</li></ul></li><li>值得注意的是，ViT的性能在很大程度上依赖于训练数据的规模和质量。在小规模数据上，由于ViT缺乏CNN的归纳偏置（locality和translation invariance），其性能可能不如CNN。然而，在大规模数据上，ViT可以通过学习更丰富的特征表示来取得更好的性能。因此，ViT通常在大规模数据集上进行预训练，并通过微调接入下游任务。</li><li>虽然在该论文中ViT主要用作图像分类任务，但后续的其他工作已经证明，ViT架构也可以应用于其他计算机视觉任务，如目标检测、语义分割等。在这些任务中，ViT可能需要进行一些修改，例如引入局部注意力机制或结合CNN的特征提取能力，以提高性能。</li></ul></li><li><p>ViT的主体架构<br><img src="/img/image-vit.png" alt="alt text"></p></li></ol><p>数据处理流程：</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">输入图像224x224x3  </span><br><span class="line">-[分块]-&gt; 196x16x16x3(224x224/16x16=196)  </span><br><span class="line">-[通过768-&gt;768的linear进行patch embedding]-&gt; 196x768(16x16x3=768)  </span><br><span class="line">-[positional encoding与用于分类的虚拟头token&lt;cls&gt;]-&gt; 197x768  </span><br><span class="line">-[Transformer编码器]-&gt; 197x768  </span><br><span class="line">-[&lt;cls&gt;token进入768-&gt;num_classes的分类头]-&gt; 分类结果</span><br></pre></td></tr></table></figure><ul><li><p>除了加入特殊的全局语义token<code>&lt;cls&gt;</code>，最终将<code>&lt;cls&gt;</code>连到线性分类头以产生分类结果，也可以不加入<code>&lt;cls&gt;</code>，直接将Transformer编码器输出的每个token进行全局平均池化后输入分类头。</p></li><li><p>关于位置编码：经典的Transformer使用1D的位置编码，假如编码的目标维度为d，那么这d个值全部用来表示原token在一维序列中的位置；而2D的位置编码，假如编码目标维度为d，那么这d个值的一半用来表示原patch在二维图像中的行位置，另一半用来表示原patch(token)在二维图像中的列位置，然后把行表示和列表示拼接起来形成d维位置编码；相对位置编码则是通过计算patch之间的相对位置关系来生成位置编码，而不是直接使用绝对位置。实际上，在ViT中，这三种位置编码方式的性能差异不大。</p></li><li><p>关于归纳偏置：ViT中的MLP是具有CNN的locality和translation invariance的，但是Attention部分缺乏这些归纳偏置，它是全局的。图片的2D信息ViT几乎没有使用（仅在patch encoding使用了），因此ViT在小规模数据上性能不如CNN；但是在大规模数据上，ViT通过注意力机制的优良特性，能够学习更丰富的特征表示来取得更好的性能。从这个角度看，ViT的潜力是巨大的。这也引出了混合的ViT架构，即先使用CNN提取局部特征，然后将这些特征输入到Transformer中进行全局建模，以结合两者的优势，该混合模型在某些场景下表现优于CNN和ViT。</p></li><li><p>关于微调ViT：使用不同大小的图片会导致不同数量的patches，从而导致Transformer编码器输入的序列长度不同。为了适应不同大小的图片，ViT通常会在预训练阶段使用固定大小的图片进行训练，然后在微调阶段根据需要调整输入图片的大小。对于较大的图片，可以通过增加patch的大小来减少序列长度；对于较小的图片，可以通过减少patch的大小来增加序列长度。此外，如果patches数量发生改变，先前的位置编码也不再适用，可以使用插值方法来调整位置编码，以适应新的输入尺寸。</p></li><li><p>关于数据集选择和训练：ViT在大规模数据集上表现更好，只有在大规模数据集上进行预训练，才能充分发挥其优势。因此通常在ImageNet-21k或JFT-300M等大规模数据集上进行预训练，然后在较小的数据集（如ImageNet-1k）上进行微调。此外，ViT的训练通常需要较长的时间和更多的计算资源，因此在实际应用中，研究人员可能会选择使用预训练的ViT模型，并通过微调来适应特定的任务和数据集。</p></li></ul><h1 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h1><p>ViT的意义不仅仅是在图像分类任务上提升了几个百分点，而是展示了Transformer架构在计算机视觉领域的潜力和适用性，它构建了NLP与CV交叉的新桥梁。同时，它也表明了Transformer架构的通用性与巨大潜力，推动了后续涉及更多领域的多模态大模型的发展。总之，ViT是一个重要的里程碑，它不仅在技术上取得了突破，还为未来的研究和应用开辟了新的方向。</p>]]></content>
+        <content type="html"><![CDATA[<p>原论文链接：<a href="https://arxiv.org/abs/2010.11929">https://arxiv.org/abs/2010.11929</a><br>原视频链接：<a href="https://www.bilibili.com/video/BV15P4y137jb">https://www.bilibili.com/video/BV15P4y137jb</a></p><p><strong>CV常见任务对比</strong></p><table><thead><tr><th><strong>任务</strong></th><th><strong>目标</strong></th><th><strong>结果形式</strong></th><th><strong>是否区分个体</strong></th><th><strong>精细度</strong></th></tr></thead><tbody><tr><td><strong>图像分类</strong></td><td>识别类别</td><td>标签 (Label)</td><td>否</td><td>最低（全局）</td></tr><tr><td><strong>目标检测</strong></td><td>定位+识别</td><td>矩形框 (Box)</td><td><strong>是</strong></td><td>中等（区域）</td></tr><tr><td><strong>语义分割</strong></td><td>像素分类</td><td>类别掩码 (Mask)</td><td>否</td><td>高（像素）</td></tr><tr><td><strong>实例分割</strong></td><td>个体像素分类</td><td>实例掩码 (Mask)</td><td><strong>是</strong></td><td>最高（像素）</td></tr></tbody></table><h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>传统的计算机视觉任务通常使用卷积神经网络（CNN）来处理图像数据。然而，近年来，Transformer架构在自然语言处理（NLP）领域取得了巨大成功，引起了研究人员的兴趣，尝试将其应用于计算机视觉任务。Vision Transformer（ViT）是其中一个重要的工作，它将Transformer应用于图像分类任务，通过适当的数据预处理，ViT可以取得与传统CNN相媲美甚至更好的性能。此外，在一些特殊的极端情况下，ViT可以处理普通CNN无法解决的问题，例如图像遮挡，纹理去除，加入对抗性斑块，图像重组等。</p><h1 id="ViT论文精读"><a href="#ViT论文精读" class="headerlink" title="ViT论文精读"></a>ViT论文精读</h1><ol><li><ul><li>将Transformer应用于视觉任务有什么难处？如何解决？</li><li>我们知道，Transformer的核心功能是处理序列数据，形状为(batch_size,seq_steps)或(batch_size,seq_steps,embedding_dim)。Transformer中最重要的自注意力本质上是序列中的每一个元素与所有其他元素进行交互（加权和）的过程，因此它是一个O(n^2)的操作。对于文本序列，我们可以将序列长度设为几百至一千，这在计算上是可行的。然而，对于图像数据，尤其是高分辨率图像，直接将图片拉直，每个像素作为一个序列元素会导致序列长度过长（224*224&#x3D;50176），从而使得计算成本变得不可接受。</li><li>ViT通过将图像划分为固定大小的非重叠块（patches）来解决这个问题，例如，如果在224x224的图像上使用16x16的块，那么序列长度将变为(224&#x2F;16)^2&#x3D;196。每个块被视为一个序列元素，并通过线性变换映射到一个固定维度的嵌入空间中。这种方法大大减少了序列长度，使得Transformer能够有效地处理图像数据。ViT的架构是相当简单的，主要由以下几个部分组成，实际上就是图像分块+标准Transformer编码器：<ul><li>Patch Embedding：将图像划分为固定大小的块，并将每个块展平后通过线性变换映射到一个固定维度的嵌入空间中。</li><li>Positional Encoding：由于Transformer没有内置的位置信息，因此需要添加位置编码来保留图像块之间的空间关系。</li><li>Transformer Encoder：由多个Transformer层组成，每层包含多头自注意力机制和前馈神经网络。</li><li>Classification Head：在Transformer编码器的输出上添加一个分类头，用于图像分类任务。</li></ul></li><li>值得注意的是，ViT的性能在很大程度上依赖于训练数据的规模和质量。在小规模数据上，由于ViT缺乏CNN的归纳偏置（locality和translation invariance），其性能可能不如CNN。然而，在大规模数据上，ViT可以通过学习更丰富的特征表示来取得更好的性能。因此，ViT通常在大规模数据集上进行预训练，并通过微调接入下游任务。</li><li>虽然在该论文中ViT主要用作图像分类任务，但后续的其他工作已经证明，ViT架构也可以应用于其他计算机视觉任务，如目标检测、语义分割等。在这些任务中，ViT可能需要进行一些修改，例如引入局部注意力机制或结合CNN的特征提取能力，以提高性能。</li></ul></li><li><p>ViT的主体架构<br><img src="/img/image-vit.png" alt="alt text"></p></li></ol><p>数据处理流程：</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">输入图像(224,224,3)  </span><br><span class="line">-[分块]-&gt; (14,14,16,16,3)</span><br><span class="line">-[通过768-&gt;768的linear进行patch embedding/patch projection]-&gt; (196,768) (224x224/16x16=196, 16x16x3=768)  </span><br><span class="line">-[positional encoding与用于分类的虚拟头token&lt;cls&gt;]-&gt; (197,768)  </span><br><span class="line">-[Transformer编码器]-&gt; (197,768)  </span><br><span class="line">-[&lt;cls&gt;token进入768-&gt;num_classes的分类头]-&gt; 分类结果</span><br></pre></td></tr></table></figure><ul><li><p>除了加入特殊的全局语义token<code>&lt;cls&gt;</code>，最终将<code>&lt;cls&gt;</code>连到线性分类头以产生分类结果，也可以不加入<code>&lt;cls&gt;</code>，直接将Transformer编码器输出的每个token进行全局平均池化后输入分类头。</p></li><li><p>关于位置编码：经典的Transformer使用1D的位置编码，假如编码的目标维度为d，那么这d个值全部用来表示原token在一维序列中的位置；而2D的位置编码，假如编码目标维度为d，那么这d个值的一半用来表示原patch在二维图像中的行位置，另一半用来表示原patch(token)在二维图像中的列位置，然后把行表示和列表示拼接起来形成d维位置编码；相对位置编码则是通过计算patch之间的相对位置关系来生成位置编码，而不是直接使用绝对位置。实际上，在ViT中，这三种位置编码方式的性能差异不大。</p></li><li><p>关于归纳偏置：ViT中的MLP是具有CNN的locality和translation invariance的，但是Attention部分缺乏这些归纳偏置，它是全局的。图片的2D信息ViT几乎没有使用（仅在patch encoding使用了），因此ViT在小规模数据上性能不如CNN；但是在大规模数据上，ViT通过注意力机制的优良特性，能够学习更丰富的特征表示来取得更好的性能。从这个角度看，ViT的潜力是巨大的。这也引出了混合的ViT架构，即先使用CNN提取局部特征，然后将这些特征输入到Transformer中进行全局建模，以结合两者的优势，该混合模型在某些场景下表现优于CNN和ViT。</p></li><li><p>关于微调ViT：使用不同大小的图片会导致不同数量的patches，从而导致Transformer编码器输入的序列长度不同。为了适应不同大小的图片，ViT通常会在预训练阶段使用固定大小的图片进行训练，然后在微调阶段根据需要调整输入图片的大小。对于较大的图片，可以通过增加patch的大小来减少序列长度；对于较小的图片，可以通过减少patch的大小来增加序列长度。此外，如果patches数量发生改变，先前的位置编码也不再适用，可以使用插值方法来调整位置编码，以适应新的输入尺寸。</p></li><li><p>关于数据集选择和训练：ViT在大规模数据集上表现更好，只有在大规模数据集上进行预训练，才能充分发挥其优势。因此通常在ImageNet-21k或JFT-300M等大规模数据集上进行预训练，然后在较小的数据集（如ImageNet-1k）上进行微调。此外，ViT的训练通常需要较长的时间和更多的计算资源，因此在实际应用中，研究人员可能会选择使用预训练的ViT模型，并通过微调来适应特定的任务和数据集。</p></li></ul><h1 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h1><p>ViT的意义不仅仅是在图像分类任务上提升了几个百分点，而是展示了Transformer架构在计算机视觉领域的潜力和适用性，它构建了NLP与CV交叉的新桥梁。同时，它也表明了Transformer架构的通用性与巨大潜力，推动了后续涉及更多领域的多模态大模型的发展。总之，ViT是一个重要的里程碑，它不仅在技术上取得了突破，还为未来的研究和应用开辟了新的方向。</p>]]></content>
       
       
       <categories>
@@ -26,13 +63,13 @@
       
         <tags>
             
-            <tag> ViT </tag>
-            
             <tag> Transformer </tag>
             
             <tag> CV </tag>
             
             <tag> PyTorch </tag>
+            
+            <tag> ViT </tag>
             
         </tags>
       
@@ -130,9 +167,9 @@
       
         <tags>
             
-            <tag> Prompt Engineering </tag>
-            
             <tag> LLM </tag>
+            
+            <tag> Prompt Engineering </tag>
             
         </tags>
       
@@ -165,9 +202,9 @@
       
         <tags>
             
-            <tag> Prompt Engineering </tag>
-            
             <tag> LLM </tag>
+            
+            <tag> Prompt Engineering </tag>
             
         </tags>
       
@@ -194,9 +231,9 @@
       
         <tags>
             
-            <tag> LLM </tag>
-            
             <tag> NTP </tag>
+            
+            <tag> LLM </tag>
             
         </tags>
       
