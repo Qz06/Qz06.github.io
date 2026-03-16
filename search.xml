@@ -8,7 +8,7 @@
       <link href="/2026/03/15/Diffusion-Transformer/"/>
       <url>/2026/03/15/Diffusion-Transformer/</url>
       
-        <content type="html"><![CDATA[<p>参考：建议先看<a href="https://zhuanlan.zhihu.com/p/683657190">https://zhuanlan.zhihu.com/p/683657190</a><br>      再看<a href="https://zhuanlan.zhihu.com/p/684125968，会对DiT有一个相当透彻的理解">https://zhuanlan.zhihu.com/p/684125968，会对DiT有一个相当透彻的理解</a></p><p><img src="/img/image-dit.png" alt="alt text"></p>]]></content>
+        <content type="html"><![CDATA[<p>参考：建议先看<a href="https://zhuanlan.zhihu.com/p/683657190">https://zhuanlan.zhihu.com/p/683657190</a><br>      再看<a href="https://zhuanlan.zhihu.com/p/684125968，会对DiT有一个相当透彻的理解">https://zhuanlan.zhihu.com/p/684125968，会对DiT有一个相当透彻的理解</a></p><p><img src="/img/image-dit.png" alt="alt text"></p><p>以下为Gemini概括的我在学习DiT过程中的<a href="/files/dit.pdf">对话内容</a>,内容覆盖较为片面，仅供参考：</p><hr><h2 id="1-核心架构：从-DDPM-到-DiT"><a href="#1-核心架构：从-DDPM-到-DiT" class="headerlink" title="1. 核心架构：从 DDPM 到 DiT"></a>1. 核心架构：从 DDPM 到 DiT</h2><p>DiT 并不是脱离传统扩散模型的全新物种，而是对现有框架的“换擎升级”。</p><ul><li><strong>骨干网络替换</strong>：DiT 将传统 DDPM（去噪扩散概率模型）中基于 CNN 的 <strong>U-Net</strong> 替换成了 <strong>Vision Transformer (ViT)</strong>。</li><li><strong>潜在扩散模型 (LDM)</strong>：DiT 并不直接在原始像素空间生成图像，而是运行在由 VAE（变分自编码器）压缩后的 <strong>潜在空间 (Latent Space)</strong> 中。</li><li><strong>VAE 的双重角色</strong>：</li><li><strong>训练阶段（不可或缺）</strong>：使用基于 CNN 的 VAE <strong>编码器</strong>，将高分辨率图像压缩为低维潜在表示（建立潜在空间的数学分布），大幅降低 Transformer 的计算开销。</li><li><strong>推理/采样阶段</strong>：仅使用 VAE <strong>解码器</strong>，将 DiT 在潜在空间去噪完毕的张量还原回人类可见的像素图像。</li></ul><h2 id="2-数据维度与张量流转"><a href="#2-数据维度与张量流转" class="headerlink" title="2. 数据维度与张量流转"></a>2. 数据维度与张量流转</h2><p>对话详细解析了图像和条件在模型内部是如何变换形状的。</p><ul><li><strong>潜在表示 ($z$) 的形状</strong>：对于 <strong>256x256x3</strong> 的原始 RGB 图像，经过 8 倍下采样的 VAE 后，高度和宽度变为 32，通道数为了特征提取扩展为 4。因此进入 DiT 的特征图形状为 <strong>32x32x4</strong>。随后该特征图会被 <code>patchify</code> 操作切分为 token 序列。</li><li><strong>时间与类别的嵌入 (Embeddings)</strong>：</li><li><strong>时间步 $t$</strong>：标量通过正余弦编码转化为频率向量，再通过 MLP（多层感知机）升维至隐藏层维度 $D$。</li><li><strong>类别 $c$</strong>：通过查表（Embedding Table）映射为 $D$ 维稠密向量。</li><li><strong>融合</strong>：时间步向量与类别向量<strong>直接相加</strong>，形成形状为 $(N, D)$ 的综合条件向量（$N$ 为批大小 Batch Size），作为后续网络控制的基础。</li></ul><ul><li><strong><code>chunk</code> 函数的作用</strong>：PyTorch 中的切分函数，在 DiT 中像“平分刀”一样用于拆解高维输出。例如将预测输出拆分为噪声和方差，或将推理时的批次拆分为有条件输出和无条件输出。</li></ul><h2 id="3-核心组件：DiT-Block-的内部机制"><a href="#3-核心组件：DiT-Block-的内部机制" class="headerlink" title="3. 核心组件：DiT Block 的内部机制"></a>3. 核心组件：DiT Block 的内部机制</h2><p>Transformer 块在 DiT 中为了适应扩散任务做了专门的定制。</p><ul><li><strong>AdaLN-Zero (自适应层归一化)</strong>：</li><li>传统的 LayerNorm 会在特征维度上计算均值和方差，并使用固定的缩放因子 $\gamma$ 和偏置 $\beta$。</li><li>DiT 使用 AdaLN，其 $\gamma$ 和 $\beta$ 是动态的。融合后的 $(N, D)$ 条件向量会被送入一个 MLP，用于<strong>回归预测</strong>当前层所需的 $\gamma$、$\beta$ 以及残差块的门控系数 $\alpha$。</li><li><strong>初始化</strong>：相关参数被初始化为零（即 Zero），使得模型在初期等效于恒等映射，极大地增强了深层网络的稳定性。</li></ul><ul><li><strong>激活函数</strong>：</li><li><strong>GELU</strong>：结合了 ReLU 的确定性和 Dropout 的随机性，通常用于 Transformer 的前馈网络（FeedForward）中。公式为 $x \cdot \Phi(x)$。</li><li><strong>SiLU (Swish)</strong>：平滑且非单调，通常用于 MLP 层（如时间步嵌入的升维网络）中。公式为 $x \cdot \sigma(x)$。</li></ul><h2 id="4-预测目标：双管齐下（噪声与方差）"><a href="#4-预测目标：双管齐下（噪声与方差）" class="headerlink" title="4. 预测目标：双管齐下（噪声与方差）"></a>4. 预测目标：双管齐下（噪声与方差）</h2><p>DiT 继承了 Improved DDPM 的策略，输出维度被设定为 $2 \times C$，同时预测均值（去噪方向）和协方差（随机扰动范围）。</p><ul><li><strong>预测噪声 ($\epsilon$)</strong>：指导模型如何将当前状态向真实图像的分布（均值）靠拢。</li><li><strong>预测方差 ($\Sigma$ / $v$)</strong>：模型不直接预测方差绝对值，而是预测一个插值系数 $v$，在理论最大方差和最小方差之间进行对数空间插值，计算出采样公式 $x<em>{t-1} = \mu</em>\theta(x<em>t, t) + \sigma</em>\theta(x_t, t) \cdot z$ 中的 $\sigma$。</li><li><strong>预测方差的意义</strong>：极大地提升了模型在<strong>少步数采样</strong>（如从 1000 步压缩至 250 步）时的生成质量，优化了对数似然估计，并消除了手动调节方差时间表的麻烦。</li></ul><h2 id="5-训练机制与损失函数"><a href="#5-训练机制与损失函数" class="headerlink" title="5. 训练机制与损失函数"></a>5. 训练机制与损失函数</h2><p>训练过程是让模型学会如何去噪并掌握数据分布。</p><ul><li><strong>双重损失函数</strong>：</li><li><strong>噪声损失 ($Loss_{mse}$)</strong>：使用均方误差 (MSE) 衡量模型预测噪声与实际添加噪声的差异，确保“去噪位置”的准确性。</li><li><strong>方差损失 ($Loss_{vlb}$)</strong>：使用 KL 散度（计算变分下界）衡量模型生成的分布与真实后验正态分布之间的差异，确保“去噪分布”的准确性。</li></ul><ul><li><strong>EMA (指数移动平均) 权重</strong>：</li><li>训练中并行维护两套权重。在线模型通过梯度下降实时更新；EMA 模型（影子模型）通过公式 $\theta<em>{EMA}^{new} = 0.9999 \cdot \theta</em>{EMA}^{old} + (0.0001) \cdot \theta_{current}$ 缓慢跟随。</li><li><strong>意义</strong>：过滤梯度更新的随机噪声，获得更平滑、稳定且泛化能力更强的权重。DiT 论文中的 SOTA 结果均使用 EMA 模型生成。</li></ul><h2 id="6-生成控制：无分类器引导-CFG"><a href="#6-生成控制：无分类器引导-CFG" class="headerlink" title="6. 生成控制：无分类器引导 (CFG)"></a>6. 生成控制：无分类器引导 (CFG)</h2><p>这是平衡图像生成<strong>多样性</strong>与<strong>质量/标签契合度</strong>的核心技术。</p><ul><li><strong>训练时的随机丢弃</strong>：训练阶段以一定概率（如 10%-20%）将类别标签替换为空条件（$\varnothing$）。这使得同一个模型既学会了生成特定类别的图像（有条件），也学会了生成整个数据集的“平均/平庸”噪声特征（无条件）。</li><li><strong>推理时的差值放大 (线性外推)</strong>：</li><li>采样时，模型对同一输入分别运行有条件和无条件两次预测。</li><li>通过核心公式：<script type="math/tex; mode=display">\hat{\epsilon}_\theta = \epsilon_{uncond} + s \cdot (\epsilon_{cond} - \epsilon_{uncond})</script></li></ul><ul><li>以无条件输出（平均噪声）为基准，利用引导系数 $s$ (<code>cfg-scale</code>) 放大条件特有的特征。$s$ 越高，特征越强烈，但可能显得生硬；$s=1$ 表示纯条件预测，无放大。</li></ul><ul><li><strong>工程细节</strong>：CFG 的混合外推操作<strong>仅针对均值（预测噪声）生效</strong>，以引导图像长得更像标签；而预测出的协方差（方差）部分则直接采用有条件分支的输出，不参与 CFG 混合。</li></ul><h2 id="7-核心性能指标"><a href="#7-核心性能指标" class="headerlink" title="7. 核心性能指标"></a>7. 核心性能指标</h2><p>DiT 证明了 Transformer 在视觉扩散任务中具有极强的可扩展性（Scalability）。</p><ul><li><strong>GFLOPS</strong>：衡量模型计算复杂度的指标。DiT 通过增加网络深度、宽度和 token 数量来提升 Gflops。</li><li><strong>FID (Fréchet Inception Distance)</strong>：衡量生成图像质量与多样性的指标（越低越好）。随着 Gflops 的增加，DiT 的 FID 稳定下降。DiT-XL/2 (256x256) 凭借 <strong>119 Gflops</strong> 达到了 <strong>2.27</strong> 的业界 SOTA FID 成绩。</li></ul><hr>]]></content>
       
       
       <categories>
@@ -86,7 +86,7 @@
       <link href="/2026/03/12/DDPM%E7%9A%84%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3/"/>
       <url>/2026/03/12/DDPM%E7%9A%84%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3/</url>
       
-        <content type="html"><![CDATA[<p><strong>本文旨在用最简短的篇幅，描述DDPM的核心思想与设计动机，仅作为日后回顾DDPM的一个记忆锚点，具体公式和代码请参考其它资料。本文尽可能省略一切数学推导，跳略的推导会标注出来。</strong></p><p>参考：<a href="https://zhuanlan.zhihu.com/p/650394311">https://zhuanlan.zhihu.com/p/650394311</a></p><p>生成模型的目标，就是从一张随机图像（如纯噪声）开始，生成一张“真实”的图像，这里的“真实”是指生成的图像符合实际图像的概率分布（例如，一个人拥有黄色或白色皮肤的概率是比较大的，但是拥有蓝色皮肤却是几乎不可能的）。尽管现在大多数生成模型都支持根据输入的文字生成对应内容的图片，但那也只是通过在模型的每个模块加上文字的特征表示而训练得到的，对模型的整体结构影响不大，因此本文主要介绍DDPM从噪声生图的核心思想。</p><p>DDPM（以及所有生成式模型）的优化目标是让模型产生的图片分布和真实图片分布尽量相似，那么就有了以下推导过程：</p><ol><li>为了使模型产生的图片分布和真实图片分布尽可能相似，我们要求 ${argmin}_\theta KL(P_{data}||P_{\theta})$</li><li>通过计算拆解，优化目标等价于 $argmax_{\theta}\prod_{i=1}^{m} P_{\theta}(x_i)$ ,同时也等价于让连乘项中的每一项 $logP_{\theta}(x_i)$ 最大。这实际上就是最大似然估计（MLE），最大化真实图片在模型分布下的概率。（有的文章会把1和2反过来，从MLE推出KL散度的最小化，但都是等价的，只需要明白这是两种理解的角度）</li><li>继续拆解 $logP_{\theta}(x_i)$，将优化目标转向最大化下界（ELBO） $E_{q_{\phi}(x_{1}:x_{T}|x_{0})}log\frac{P_{\theta}(x_{0}:x_{T})}{q_{\phi}(x_{1}:x_{T}|x_{0})}$</li><li>继续拆解，优化目标变为最大化 $\sum_{t=2}^{T} E_{q(x_{t}|x_{0})}[D_{KL}(q(x_{t-1}|x_{t},x_{0}) || p_{\theta}(x_{t-1}|x_{t}))]$ ，这一步很关键，因为它从模型最终输出图片与实际图片分布的KL散度转换为了模型每一步输出的图片与实际图片分布的KL散度，这就使得模型的训练目标变得可行了（因为直接优化最终输出图片与实际图片分布的KL散度是不可行的，我们无法直接计算这个散度），而且这个优化目标也非常合理，因为如果模型每一步输出的图片分布都和实际图片分布尽可能接近，那么最终输出的图片分布自然也会和实际图片分布尽可能接近。</li><li>继续推导得出 $q(x_{t-1}|x_{t}, x_{0})\sim N(\frac{\sqrt{\bar\alpha_{t-1}}\beta_{t}x_{0} + \sqrt{\alpha_{t}}(1-\bar\alpha_{t-1})x_{t}}{1 - \bar\alpha_{t}}, \frac{(1-\alpha_{t})(1-\bar\alpha_{t-1})}{1-\bar\alpha_{t}})$ ,其中该分布的方差是只和我们设置的超参数相关的常量，期望是与初始输入 $x_{0}$ 和当前输入 $x_{t}$ 相关的函数。</li><li>现在我们得到了第4步中KL散度的 $q(x_{t-1}|x_{t}, x_{0})$ 项，再来看 $p_{\theta}(x_{t-1}|x_{t})$ 项，为了让p和q的分布接近，我们需要让p去学习q的均值和方差。由于方差是一个常量，在DDPM中，假设它是固定的，不再单独去学习它（后续的扩散模型，例如GLIDE则同时对方差也做了预测），因此现在只需要学习q的均值，即 $\min | \tilde{\mu}(x_t, x_0) - \mu_\theta(x_t) |^2$ 。经过计算，可以把q的均值表示成 $\frac{1}{\sqrt{\alpha_{t}}}(x_{t} - \frac{1-\alpha_{t}}{\sqrt{1-\bar\alpha_{t}}}\epsilon)$ , $x_t$ 是已知的,因此这里只要让模型去预测噪声即可。化简得到最终的优化目标为 $\min | \epsilon - \epsilon_\theta(x_t, t) |^2$ 。而 $x_t$ 又可以通过重参数化技巧表示成 $x_t = \sqrt{\bar\alpha_{t}}x_0 + \sqrt{1-\bar\alpha_{t}}\epsilon$ ,这样我们就得到了论文中的训练算法。</li></ol><p>DDPM希望生成一张符合实际分布的图像，然而一开始的图像是纯噪声，直接从它得到最终图像不现实。因此DDPM采用了这样的思想：既然可以给一张清晰的图像逐步添加噪声，使得它越来越“模糊”，最终变成纯噪声，那么我是不是也可以反过来，从纯噪声开始，一点一点猜出上一步的略微清晰的图像是什么样子，最终得到完全清晰的目标图像。假如现在我有了一个训练好的DDPM模型，想通过预测 $p(x_{t-1}|x_t)$ 来得到上一步的图像，然而 $p(x_{t-1}|x_t)$ 是无法计算的，因为它依赖于未知的整个数据集的分布，而 $p(x_{t-1}|x_t, x_0)$ 是可以计算的，因此我们采用迂回的策略：先通过 $x_t$ 得到噪声 $\epsilon$ 的预测值 ，再通过 $x_t$ 和 $\epsilon$ 的预测值来计算出 $x_0$ 的预测值（注意，这里的 $x_0$ 是指当前时间步t模型通过噪声想象出的初始图像，而不是通过马尔科夫过程预测出的最终图像，因此这里的 $x_0$ 与实际结果有较大差距，不能直接作为输出），最后通过 $x_t$ 和 $x_0$ 的预测值来计算出 $x_{t-1}$ 的预测分布 $p(x_{t-1}|x_t, x_0)$ ,再从这个分布中采样（即论文Sampling算法的第4行）得到 $x_{t-1}$ 的预测值。通过不断迭代这个过程，最终就可以从纯噪声生成出一张清晰的图像了。（当然，这里不用真的计算出预测的 $x_0$，因为它只是一个中间变量，我们只需要通过 $x_t$ 和 $\epsilon$ 的预测值来计算出 $x_{t-1}$ 的预测分布的期望就可以了，这里这么说只是为了方便理解）。</p><p>值得说明的是，DDPM在时间步t并不是预测从t-1到t添加的噪声，而是从初始状态 $x_0$ 到当前状态 $x_t$ 的“累积等效噪声”，是多个正态分布叠加产生的一个等效的正态分布。</p>]]></content>
+        <content type="html"><![CDATA[<p><strong>本文旨在用最简短的篇幅，描述DDPM的核心思想与设计动机，仅作为日后回顾DDPM的一个记忆锚点，具体公式和代码请参考其它资料。本文尽可能省略一切数学推导，跳略的推导会标注出来。</strong></p><p>参考：<a href="https://zhuanlan.zhihu.com/p/650394311">https://zhuanlan.zhihu.com/p/650394311</a><br>      <a href="https://lilianweng.github.io/posts/2021-07-11-diffusion-models/">https://lilianweng.github.io/posts/2021-07-11-diffusion-models/</a></p><p>生成模型的目标，就是从一张随机图像（如纯噪声）开始，生成一张“真实”的图像，这里的“真实”是指生成的图像符合实际图像的概率分布（例如，一个人拥有黄色或白色皮肤的概率是比较大的，但是拥有蓝色皮肤却是几乎不可能的）。尽管现在大多数生成模型都支持根据输入的文字生成对应内容的图片，但那也只是通过在模型的每个模块加上文字的特征表示而训练得到的，对模型的整体结构影响不大，因此本文主要介绍DDPM从噪声生图的核心思想。</p><p>DDPM（以及所有生成式模型）的优化目标是让模型产生的图片分布和真实图片分布尽量相似，那么就有了以下推导过程：</p><ol><li>为了使模型产生的图片分布和真实图片分布尽可能相似，我们要求 ${argmin}_\theta KL(P_{data}||P_{\theta})$</li><li>通过计算拆解，优化目标等价于 $argmax_{\theta}\prod_{i=1}^{m} P_{\theta}(x_i)$ ,同时也等价于让连乘项中的每一项 $logP_{\theta}(x_i)$ 最大。这实际上就是最大似然估计（MLE），最大化真实图片在模型分布下的概率。（有的文章会把1和2反过来，从MLE推出KL散度的最小化，但都是等价的，只需要明白这是两种理解的角度）</li><li>继续拆解 $logP_{\theta}(x_i)$，将优化目标转向最大化下界（ELBO） $E_{q_{\phi}(x_{1}:x_{T}|x_{0})}log\frac{P_{\theta}(x_{0}:x_{T})}{q_{\phi}(x_{1}:x_{T}|x_{0})}$</li><li>继续拆解，优化目标变为最大化 $\sum_{t=2}^{T} E_{q(x_{t}|x_{0})}[D_{KL}(q(x_{t-1}|x_{t},x_{0}) || p_{\theta}(x_{t-1}|x_{t}))]$ ，这一步很关键，因为它从模型最终输出图片与实际图片分布的KL散度转换为了模型每一步输出的图片与实际图片分布的KL散度，这就使得模型的训练目标变得可行了（因为直接优化最终输出图片与实际图片分布的KL散度是不可行的，我们无法直接计算这个散度），而且这个优化目标也非常合理，因为如果模型每一步输出的图片分布都和实际图片分布尽可能接近，那么最终输出的图片分布自然也会和实际图片分布尽可能接近。</li><li>继续推导得出 $q(x_{t-1}|x_{t}, x_{0})\sim N(\frac{\sqrt{\bar\alpha_{t-1}}\beta_{t}x_{0} + \sqrt{\alpha_{t}}(1-\bar\alpha_{t-1})x_{t}}{1 - \bar\alpha_{t}}, \frac{(1-\alpha_{t})(1-\bar\alpha_{t-1})}{1-\bar\alpha_{t}})$ ,其中该分布的方差是只和我们设置的超参数相关的常量，期望是与初始输入 $x_{0}$ 和当前输入 $x_{t}$ 相关的函数。</li><li>现在我们得到了第4步中KL散度的 $q(x_{t-1}|x_{t}, x_{0})$ 项，再来看 $p_{\theta}(x_{t-1}|x_{t})$ 项，为了让p和q的分布接近，我们需要让p去学习q的均值和方差。由于方差是一个常量，在DDPM中，假设它是固定的，不再单独去学习它（后续的扩散模型，例如GLIDE则同时对方差也做了预测），因此现在只需要学习q的均值，即 $\min | \tilde{\mu}(x_t, x_0) - \mu_\theta(x_t) |^2$ 。经过计算，可以把q的均值表示成 $\frac{1}{\sqrt{\alpha_{t}}}(x_{t} - \frac{1-\alpha_{t}}{\sqrt{1-\bar\alpha_{t}}}\epsilon)$ , $x_t$ 是已知的,因此这里只要让模型去预测噪声即可。化简得到最终的优化目标为 $\min | \epsilon - \epsilon_\theta(x_t, t) |^2$ 。而 $x_t$ 又可以通过重参数化技巧表示成 $x_t = \sqrt{\bar\alpha_{t}}x_0 + \sqrt{1-\bar\alpha_{t}}\epsilon$ ,这样我们就得到了论文中的训练算法。</li></ol><p>DDPM希望生成一张符合实际分布的图像，然而一开始的图像是纯噪声，直接从它得到最终图像不现实。因此DDPM采用了这样的思想：既然可以给一张清晰的图像逐步添加噪声，使得它越来越“模糊”，最终变成纯噪声，那么我是不是也可以反过来，从纯噪声开始，一点一点猜出上一步的略微清晰的图像是什么样子，最终得到完全清晰的目标图像。假如现在我有了一个训练好的DDPM模型，想通过预测 $p(x_{t-1}|x_t)$ 来得到上一步的图像，然而 $p(x_{t-1}|x_t)$ 是无法计算的，因为它依赖于未知的整个数据集的分布，而 $p(x_{t-1}|x_t, x_0)$ 是可以计算的，因此我们采用迂回的策略：先通过 $x_t$ 得到噪声 $\epsilon$ 的预测值 ，再通过 $x_t$ 和 $\epsilon$ 的预测值来计算出 $x_0$ 的预测值（注意，这里的 $x_0$ 是指当前时间步t模型通过噪声想象出的初始图像，而不是通过马尔科夫过程预测出的最终图像，因此这里的 $x_0$ 与实际结果有较大差距，不能直接作为输出），最后通过 $x_t$ 和 $x_0$ 的预测值来计算出 $x_{t-1}$ 的预测分布 $p(x_{t-1}|x_t, x_0)$ ,再从这个分布中采样（即论文Sampling算法的第4行）得到 $x_{t-1}$ 的预测值。通过不断迭代这个过程，最终就可以从纯噪声生成出一张清晰的图像了。（当然，这里不用真的计算出预测的 $x_0$，因为它只是一个中间变量，我们只需要通过 $x_t$ 和 $\epsilon$ 的预测值来计算出 $x_{t-1}$ 的预测分布的期望就可以了，这里这么说只是为了方便理解）。</p><p>值得说明的是，DDPM在时间步t并不是预测从t-1到t添加的噪声，而是从初始状态 $x_0$ 到当前状态 $x_t$ 的“累积等效噪声”，是多个正态分布叠加产生的一个等效的正态分布。</p>]]></content>
       
       
       <categories>
@@ -106,13 +106,13 @@
       
         <tags>
             
+            <tag> Diffusion Model </tag>
+            
             <tag> Generative Model </tag>
             
             <tag> CV </tag>
             
             <tag> PyTorch </tag>
-            
-            <tag> Diffusion Model </tag>
             
         </tags>
       
@@ -145,13 +145,13 @@
       
         <tags>
             
+            <tag> Diffusion Model </tag>
+            
             <tag> Generative Model </tag>
             
             <tag> CV </tag>
             
             <tag> PyTorch </tag>
-            
-            <tag> Diffusion Model </tag>
             
         </tags>
       
@@ -323,9 +323,9 @@
       
         <tags>
             
-            <tag> Prompt Engineering </tag>
-            
             <tag> LLM </tag>
+            
+            <tag> Prompt Engineering </tag>
             
         </tags>
       
@@ -358,9 +358,9 @@
       
         <tags>
             
-            <tag> Prompt Engineering </tag>
-            
             <tag> LLM </tag>
+            
+            <tag> Prompt Engineering </tag>
             
         </tags>
       
@@ -387,9 +387,9 @@
       
         <tags>
             
-            <tag> LLM </tag>
-            
             <tag> NTP </tag>
+            
+            <tag> LLM </tag>
             
         </tags>
       
