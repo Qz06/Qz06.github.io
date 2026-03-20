@@ -67,13 +67,13 @@
       
         <tags>
             
-            <tag> Generative Model </tag>
-            
             <tag> CV </tag>
             
-            <tag> PyTorch </tag>
-            
             <tag> GAN </tag>
+            
+            <tag> Generative Model </tag>
+            
+            <tag> PyTorch </tag>
             
         </tags>
       
@@ -147,9 +147,9 @@
       
         <tags>
             
-            <tag> Generative Model </tag>
-            
             <tag> CV </tag>
+            
+            <tag> Generative Model </tag>
             
             <tag> PyTorch </tag>
             
@@ -186,9 +186,9 @@
       
         <tags>
             
-            <tag> Generative Model </tag>
-            
             <tag> CV </tag>
+            
+            <tag> Generative Model </tag>
             
             <tag> PyTorch </tag>
             
@@ -225,9 +225,9 @@
       
         <tags>
             
-            <tag> Generative Model </tag>
-            
             <tag> CV </tag>
+            
+            <tag> Generative Model </tag>
             
             <tag> PyTorch </tag>
             
@@ -264,13 +264,13 @@
       
         <tags>
             
-            <tag> Diffusion Model </tag>
+            <tag> CV </tag>
             
             <tag> Generative Model </tag>
             
-            <tag> CV </tag>
-            
             <tag> PyTorch </tag>
+            
+            <tag> Diffusion Model </tag>
             
         </tags>
       
@@ -303,13 +303,13 @@
       
         <tags>
             
-            <tag> Diffusion Model </tag>
+            <tag> CV </tag>
             
             <tag> Generative Model </tag>
             
-            <tag> CV </tag>
-            
             <tag> PyTorch </tag>
+            
+            <tag> Diffusion Model </tag>
             
         </tags>
       
