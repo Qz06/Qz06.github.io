@@ -1,0 +1,282 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>SRGAN,ESRGAN,RealESRGAN | Qz's Blog</title><meta name="author" content="Qz"><meta name="copyright" content="Qz"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="论文：  SRGAN：https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;1609.04802 ESRGAN：https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;1809.00219 RealESRGAN：https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;2107.10833  参考：https:&#x2F;&#x2F;zhuanlan.zhihu.com&#x2F;p&#x2F;595533046      https:&#x2F;&#x2F;zhuanlan.zhihu.c">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SRGAN,ESRGAN,RealESRGAN">
+<meta property="og:url" content="https://www.cosmosh.ink/2026/03/20/SRGAN-ESRGAN-RealESRGAN/index.html">
+<meta property="og:site_name" content="Qz&#39;s Blog">
+<meta property="og:description" content="论文：  SRGAN：https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;1609.04802 ESRGAN：https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;1809.00219 RealESRGAN：https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;2107.10833  参考：https:&#x2F;&#x2F;zhuanlan.zhihu.com&#x2F;p&#x2F;595533046      https:&#x2F;&#x2F;zhuanlan.zhihu.c">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.cosmosh.ink/img/avatar.png">
+<meta property="article:published_time" content="2026-03-20T04:20:00.000Z">
+<meta property="article:modified_time" content="2026-04-17T15:45:11.647Z">
+<meta property="article:author" content="Qz">
+<meta property="article:tag" content="CV">
+<meta property="article:tag" content="GAN">
+<meta property="article:tag" content="ESRGAN">
+<meta property="article:tag" content="SR">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.cosmosh.ink/img/avatar.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "SRGAN,ESRGAN,RealESRGAN",
+  "url": "https://www.cosmosh.ink/2026/03/20/SRGAN-ESRGAN-RealESRGAN/",
+  "image": "https://www.cosmosh.ink/img/avatar.png",
+  "datePublished": "2026-03-20T04:20:00.000Z",
+  "dateModified": "2026-04-17T15:45:11.647Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "Qz",
+      "url": "https://www.cosmosh.ink/"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://www.cosmosh.ink/2026/03/20/SRGAN-ESRGAN-RealESRGAN/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":200,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'SRGAN,ESRGAN,RealESRGAN',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 7.3.0"></head><body><div id="web_bg" style="background-image: url(/img/bg.png);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/avatar.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">23</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">32</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">26</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div><div class="menus_item"><a class="site-page" href="/gallery/"><i class="fa-fw fas fa-images"></i><span> 相册</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-rocket"></i><span> 资源</span></a></div><div class="menus_item"><a class="site-page" href="/life/"><i class="fa-fw fas fa-dna"></i><span> 游戏</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/img/arc-bg.jpg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">Qz's Blog</span></a><a class="nav-page-title" href="/"><span class="site-name">SRGAN,ESRGAN,RealESRGAN</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div><div class="menus_item"><a class="site-page" href="/gallery/"><i class="fa-fw fas fa-images"></i><span> 相册</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-rocket"></i><span> 资源</span></a></div><div class="menus_item"><a class="site-page" href="/life/"><i class="fa-fw fas fa-dna"></i><span> 游戏</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">SRGAN,ESRGAN,RealESRGAN</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-03-20T04:20:00.000Z" title="发表于 2026-03-20 12:20:00">2026-03-20</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-04-17T15:45:11.647Z" title="更新于 2026-04-17 23:45:11">2026-04-17</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/">技术</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/AI/">AI</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/AI/CV/">CV</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/AI/CV/Super-Resolution/">Super Resolution</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/AI/CV/Super-Resolution/GAN/">GAN</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><p>论文：</p>
+<ul>
+<li>SRGAN：<a target="_blank" rel="noopener" href="https://arxiv.org/abs/1609.04802">https://arxiv.org/abs/1609.04802</a></li>
+<li>ESRGAN：<a target="_blank" rel="noopener" href="https://arxiv.org/abs/1809.00219">https://arxiv.org/abs/1809.00219</a></li>
+<li>RealESRGAN：<a target="_blank" rel="noopener" href="https://arxiv.org/abs/2107.10833">https://arxiv.org/abs/2107.10833</a></li>
+</ul>
+<p>参考：<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/595533046">https://zhuanlan.zhihu.com/p/595533046</a><br>      <a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/542750836">https://zhuanlan.zhihu.com/p/542750836</a></p>
+<h1 id="SRGAN"><a href="#SRGAN" class="headerlink" title="SRGAN"></a>SRGAN</h1><p>SRGAN，即Super-Resolution Generative Adversarial Network，是一种基于生成对抗网络（GAN）的图像超分辨率方法。SRGAN的核心思想是通过一个生成器网络，输入低分辨率的图像，生成高分辨率图像，并使用一个判别器网络来评估生成图像的质量，从而使生成的图像尽可能接近真实的高分辨率图像。与传统的GAN不同，SRGAN引入了内容损失（Content Loss），该损失函数不仅考虑像素级的差异，还考虑了图像的高层次特征，从而能够生成更具视觉质量的图像。</p>
+<script type="math/tex; mode=display">
+l^{SR} = \underbrace{ \underbrace{l_{X}^{SR}}_{\text{content loss}} + \underbrace{10^{-3}l_{Gen}^{SR}}_{\text{adversarial loss}} }_{\text{perceptual loss (for VGG based content losses)}}</script><p>其中第一项内容损失的计算是基于一个VGG19的预训练模型，将生成器的输出传入该模型，经VGG模型前向传播后使用经过其激活层RELU后的特征，分别得到GT_HR与Gen_HR经过VGG19特定层的feature map, 进行一个欧式距离的计算（即MSE），得到内容损失$l_{X}^{SR}$。</p>
+<script type="math/tex; mode=display">
+l_{VGG/i,j}^{SR} = \frac{1}{W_{i,j}H_{i,j}} \sum_{x=1}^{W_{i,j}} \sum_{y=1}^{H_{i,j}} (\phi_{i,j}(I^{HR})_{x,y} - \phi_{i,j}(G_{\theta_G}(I^{LR}))_{x,y})^2</script><p>第二项对抗损失的计算则是将生成器的输出传入判别器，得到一个概率值，表示生成图像被判别器认为是真实图像的概率，取其对数并乘以-1，得到对抗损失$l_{Gen}^{SR}$。</p>
+<script type="math/tex; mode=display">
+l_{Gen}^{SR} = \sum_{n=1}^{N} -\log D_{\theta_D}(G_{\theta_G}(I^{LR}))</script><ul>
+<li>SRGAN还发现使用VGG越深层的特征图，表征特征更抽象，更远离像素空间，从而图像在感知效果上会更好。但是使用更深的网络，训练变的不稳定，生成数据会有伪影。</li>
+</ul>
+<h1 id="ESRGAN"><a href="#ESRGAN" class="headerlink" title="ESRGAN"></a>ESRGAN</h1><p>ESRGAN，即Enhanced Super-Resolution Generative Adversarial Network，是SRGAN的改进版本，主要修改了以下四个方面：</p>
+<h2 id="生成器架构修改"><a href="#生成器架构修改" class="headerlink" title="生成器架构修改"></a>生成器架构修改</h2><p>对生成器网络引入了一个残差密集连接模块Residual-in-Residual Dense Block (RRDB), 并且去掉了网络中所有的BN层，并且加入一个残差scaling操作使能够训练更深的网络结构。<br><img src="/img/image-esrgan1.png" alt="alt text"><br>在SRGAN中，每个Basic Block就是一个Residual Block，而在ESRGAN中，每个Basic Block是一个RRDB，RRDB包含了三个Dense Block，每个Dense Block包含了五个卷积层，并且每个卷积层都与后续的卷积层进行连接（每个卷积层都以前面所有卷积层的输出作为输入），形成密集连接结构。RRDB取消了RB中的BN，因为BN对图像的像素分布进行归一化，这会破坏图像原有的亮度信息和对比度，而且会导致生成的图片中含有伪影。此外，residual scaling操作, 即残差分支在加到主path前，乘以一个0-1之间的常数，能够更好的训练一个更深的网络。RRDB的输入和输出之间还有一个残差连接，这样可以更好地传递信息，避免梯度消失问题。如图：<br><img src="/img/image-esrgan2.png" alt="alt text"></p>
+<h2 id="感知损失的改进"><a href="#感知损失的改进" class="headerlink" title="感知损失的改进"></a>感知损失的改进</h2><p>ESRGAN使用了VGG网络中<strong>经过激活函数前</strong>的特征图而不是激活函数后的特征图来计算内容损失，主要是因为激活函数会减弱图像的特征，激活之后的特征非常的稀疏，从而导致效果不好，并且使用激活后的特征发现重构出来的图片与GT的亮度不一致，使用激活前的特征则能够更好的保持图像的亮度信息。</p>
+<h2 id="对判别器输出的改进"><a href="#对判别器输出的改进" class="headerlink" title="对判别器输出的改进"></a>对判别器输出的改进</h2><p>ESRGAN使用了一个相对判别器（Relativistic Discriminator，简称RaGAN）。普通判别器中，输出的是图片为真的绝对概率，对真图和假图的判断是孤立的，这会导致训练不够稳定，且生成出的纹理有时会显得生硬或不自然。相对 $D_{Ra}$会将真图 $x_{real}$ 和假图 $x_{fake}$ 成对考虑。它计算的是：</p>
+<script type="math/tex; mode=display">
+D\_{Ra}(x\_{real}, x\_{fake}) = \sigma(C(x\_{real}) - \mathbb{E}[C(x\_{fake})])</script><p>（通俗理解：真图的分数 减去 假图分数的平均值，再过一个激活函数。这里的C是指判别器的非激活输出，即传给sigmoid的原始数值，分数越高，判别器越觉得它是真的）</p>
+<p>在训练D时，D的目标是最大化 $D_{Ra}(x_{re}) = \sigma(C(x_{re}) - \text{mean}(C(x_{fa})))$和最小化 $D_{Ra}(x_{fa}) = \sigma(C(x_{fa}) - \text{mean}(C(x_{re})))$，也就是说，D的目标是让真图的分数尽可能高于假图的分数。而在训练G时，G的目标则是最大化$D_{Ra}(x_{fa}) = \sigma(C(x_{fa}) - \text{mean}(C(x_{re})))$和最小化 $D_{Ra}(x_{re}) = \sigma(C(x_{re}) - \text{mean}(C(x_{fa})))$，也就是说，G的目标是让假图的分数尽可能高于真图的分数。通过这种相对判别器的设计，G不仅在模仿真图，还在通过对比主动寻找真图里那些自己还没学会的特征，此外，因为 $G$ 的 Loss 里引入了真图的统计量（均值），所以即使某个 Batch 的假图画得特别烂，由于有真图作为参照物（Baseline），传回给 $G$ 的梯度也不会瞬间爆炸或消失，从而梯度更稳定。通过将将判别器的关注点从绝对值转向差值，生成的图像在细节上不再是杂乱的噪声，而是更具结构感的高频纹理。</p>
+<h2 id="网络插值"><a href="#网络插值" class="headerlink" title="网络插值"></a>网络插值</h2><p>为了去掉基于GAN方法引入的一些噪声，ESRGAN先训练一个PSNR导向的网络（以最大化PSNR或最小化生成图像与真实图像的MSE为优化目标），再训练一个GAN的模型，从而得到一个插值的模型：</p>
+<script type="math/tex; mode=display">
+\theta_{G}^{\text{INTERP}} = (1 - \alpha) \theta_{G}^{\text{PSNR}} + \alpha \theta_{G}^{\text{GAN}},</script><p>这样做可以消除 GAN 带来的“伪影”和“噪点”；通过调整 $\alpha$（从 0 到 1）合成无数个不同风格的模型，无需重复训练；避免了图像层的“重影”问题。平衡了感知质量和真实性。</p>
+<ul>
+<li>在ESRGAN中，更深的模型不仅能减少生成图像的噪声，而且还能改善恢复出来的HR的纹理细节，因为越深的模型，捕捉语义信息的能力越强。</li>
+</ul>
+<h1 id="RealESRGAN"><a href="#RealESRGAN" class="headerlink" title="RealESRGAN"></a>RealESRGAN</h1><p>RealESRGAN，即Real-World Super-Resolution Generative Adversarial Network，是ESRGAN的进一步改进版本，主要针对现实世界中的图像超分辨率任务进行了优化。我们知道，超分辨率算法是在学习从低清图像到高清图像的映射，而现实中的从高清图像到低清图像的退化是复杂且多样的，SR模型在训练时很难囊括所有可能出现的图像退化类型，所以SR算法在真实场景中受限，往往在一批数据上训练的模型在另外一批数据上表现就不佳，也就是泛化性不佳。因此，我们希望得到一个可用于真实场景中的泛化性强的模型，就需要先解决退化图像数据的问题，如何获得与真实退化图像最接近的训练图像数据呢？</p>
+<p>由于我们很难收集真实世界中的成对LR-SR图像数据（图片要么是高清的，要么是低清的），因此我们只能自己从HR数据中创造LR数据，通过完全模拟的数据训练。SR算法根据所得LR图像的退化过程分为两类：一类是显式建模，即通过模型手动对对HR进行退化，例如模糊、下采样、噪声和JPEG压缩，但是简单的退化组合难以完全覆盖真实数据，所以导致模型泛化性不佳；另一类是隐式建模，即通过一个GAN网络来学习从HR到LR的退化映射，但使用GAN所得数据也会让生成的数据趋于训练集的分布，当训练集的分布单一时所得LR也很单一。因此，RealESRGAN认为，一个真实的复杂退化由不同的退化过程组合而成。RealESRGAN将经典的一阶退化扩展为高阶退化模型，第i-1阶退化的输出作为第i阶退化的输入，期望通过”高阶“退化可以得到和真实退化更接近的LR数据。在论文中，使用的是二阶退化。</p>
+<p><img src="/img/image-resr1.png" alt="alt text"></p>
+<h2 id="高阶退化"><a href="#高阶退化" class="headerlink" title="高阶退化"></a>高阶退化</h2><p>每个一阶退化，即经典的退化模型，是将HR图像依次进行模糊，下采样，加噪，JPEG压缩操作从而得到一个LR图像。公式如下：</p>
+<script type="math/tex; mode=display">
+\boldsymbol{x} = \mathcal{D}(\boldsymbol{y}) = [(\boldsymbol{y} \circledast \boldsymbol{k}) \downarrow_{r} + \boldsymbol{n}]_{\text{JPEG}}</script><p>D(.)表示退化过程，主要表现为HR数据（用y表示）先和模糊核做卷积使整个图像模糊，再下采样，然后加入噪声，最后做JPEG压缩。</p>
+<ul>
+<li><p>Blur：高斯模糊核是常用的模糊退化核（尽管它可能并不能很好的模拟相机模糊），论文采用各项同性和各项异性高斯核，通过应用这些高斯核可以使生成器的输出图像更加锐利。</p>
+<blockquote>
+<p>高斯模糊:取一个中心像素，给它周围的像素分配权重。距离中心越近，权重越高；越远，权重越低（符合高斯分布）,然后将周围像素加权平均后赋值给中心像素。通过这种方式，高频信息像素值会被低频信息像素值拉低，从而表现高频信息不足，整体图像呈现模糊状态。</p>
+</blockquote>
+</li>
+<li><p>Noise：采用了两种噪声：加性高斯噪声和泊松噪声。加性高斯噪声的概率密度函数等于高斯分布的概率密度函数。泊松分布通常被用来逼近传感器噪声。</p>
+</li>
+<li><p>Resize（Downsample）：从常用的采样算法（area、bilinear、bicubic）中随机选择操作，以产生不同风格的“模糊边缘”。</p>
+<blockquote>
+<p>Nearest Neighbor (最近邻插值)：新位置的像素点离原图哪个点最近，就直接抄哪个点的颜色。计算最快，但会产生严重的锯齿。因为它不进行任何加权平均，如果缩放倍数不是整数，像素点会产生微小的位移偏移（Pixel Shift）。这会导致生成的 LR 图和 HR 图在空间位置上对不齐，模型训练时会感到非常困惑。所以 Real-ESRGAN 倾向于避开它。<br>Area (区域插值)：主要用于缩小图像。它会看新像素所覆盖的那个小区域，把区域内所有原像素的颜色值取平均。<br>Bilinear (双线性插值)：它会找到新像素周围最近的 4 个点，根据距离远近进行加权平均。比最近邻平滑得多，但会丢失一些细节。<br>Bicubic (双三次插值)：它会找到周围 16 个点 进行复杂的加权运算。它不仅考虑距离，还考虑了像素变化的斜率（三次方程）。它是超分辨率领域的“标准退化算法”。生成的图像边缘清晰度适中，最符合人眼视觉。</p>
+</blockquote>
+</li>
+<li><p>JPEG：JPEG压缩在数字图像上应用较为广泛，表现则是当JPEG压缩因子大时，图像会有明显的块。JPEG的压缩因子取值范围为[0,100]，值越小表示压缩力度越大，块状伪影越明显。</p>
+</li>
+</ul>
+<p><strong>将上面四种操作组合起来，就得到了经典的退化模型。论文对经典的退化模型进行扩展得到高阶退化模型，高阶退化模型中的高阶表示的是多次经典退化模型。n阶退化模型就表示n次经典退化模型操作的组合。</strong></p>
+<h2 id="sinc-filter"><a href="#sinc-filter" class="headerlink" title="sinc filter"></a>sinc filter</h2><p>现实世界中的数字图像处理（比如缩放、JPEG压缩、锐化）并不是完美的数学运算，它们会引入一种副作用：振铃效应（Ringing Artifacts）。当你试图用有限的频率去模拟一个“极其锐利”的边缘（比如黑白交界处）时，由于高频信息被强行截断，边缘处就会产生像水波纹一样的震荡，视觉上它像是边缘附近的条纹或者鬼影。过冲伪影(overshoot artifacts)通常与振铃伪影相结合，表现为边缘过渡处增加的跳跃。</p>
+<p>论文使用sinc filter来切断高频信息，通过调整 Sinc Filter 的截止频率（Cutoff Frequency），人为地在高清图的边缘制造出那种“重影”和“振铃”效果：</p>
+<script type="math/tex; mode=display">
+\boldsymbol{k}(i, j) = \frac{\omega_c}{2\pi \sqrt{i^2 + j^2}} J_1(\omega_c \sqrt{i^2 + j^2}),</script><p>（i，j）表示filter核坐标，$\omega_c$是截止频率，$J_1$是第一类第一阶Bessel函数。通过调整 $\omega_c$，可以控制振铃效应的强弱，从而使生成的LR图像更接近真实世界中的退化图像。</p>
+<p>模型在两个地方使用了sinc filter：一是在模糊操作的最后；二是在合成数据的最后一步设置sinc filter，我们知道合成图像的最后一步是JPEG压缩，为了涵盖更大退化空间，最后一步的sinc和JPEG的顺序是随机的，这是因为有的图像先做了锐化再进行JPEG压缩的，而有的图像是先做的JPEG压缩后进行的锐化。</p>
+<p>加入sinc filter后的模型（一阶退化的JPEG压缩模块仍保留原来的设置，没有加sinc filter; 二阶退化的JPEG压缩模块加入了sinc filter(和jpeg的顺序随机)）。</p>
+<p><img src="/img/image-resr2.png" alt="alt text"></p>
+<h2 id="判别器的改动"><a href="#判别器的改动" class="headerlink" title="判别器的改动"></a>判别器的改动</h2><p>由于退化变得更加复杂，因此模型的训练过程也更加不稳定，生成器的训练更加困难。Real-ESRGAN论文认为现在数据的退化空间更大了，原始的ESRGAN判别器不合适了，需要使用对复杂输入有更强能力的判别器，这个判别器可对局部纹理有更精确的梯度。论文使用了带有 Skip Connections 的U-Net结构。U-Net的输出是一个和输入图像尺寸一样大小的feature map，每一个像素都会和真实数值做比较回传梯度。</p>
+<p>此外，由于U-Net和更复杂的退化都加大了训练的不稳定性，为缓解该问题，论文采用谱归一化SN(spectral normalization)正则项来约束判别器，将其网络参数的变动限制在一个范围内从而稳定判别器的训练，有效缓解了 GAN 在处理极其复杂的现实数据时容易出现的训练炸掉（不收敛）的问题。论文也发现，SN还有助于缓解gan产生的过锐和artifacts问题。</p>
+<p><img src="/img/image-resr3.png" alt="alt text"></p>
+<p>通过这些设置，论文实现了局部细节增强和artifacts压制的一种平衡。</p>
+<p><img src="/img/image-resr4.png" alt="alt text"></p>
+<h2 id="生成器"><a href="#生成器" class="headerlink" title="生成器"></a>生成器</h2><p>Real-ESRGAN 的生成器基本沿用了 ESRGAN 的 RRDB（残差密集块）结构，但在输入端做了一个关键优化—Pixel Unshuffle，除了支持4倍超分还扩展到2倍和1倍超分。在x2和x1设置下，先采用pixel unshuffle来降低输入的空间尺度（扩大了通道数量）。将pixel unshuffle后的结果再送入ESRGAN网络中。这样可以减少GPU内存和计算机资源的消耗。</p>
+<blockquote>
+<p>Pixel Unshuffle :想象一张原始图像，我们按一个 $r \times r$ 的小方格（比如 $2 \times 2$）对像素进行打散并重新排列.输入是一张分辨率为 $H \times W$，通道数为 $C$ 的图像。它把原本相邻的像素点“抽出来”，放进不同的通道里，例如，对于一个 $2 \times 2$ 的区域，它把左上、右上、左下、右下四个像素分别分给四个新通道。分辨率减小为 $\frac{H}{r} \times \frac{W}{r}$，但通道数增加为 $r^2 \times C$。</p>
+</blockquote>
+<h2 id="训练："><a href="#训练：" class="headerlink" title="训练："></a>训练：</h2><ul>
+<li>仍然采用两个阶段训练方法：先用L1 loss监督训练一个PNSR-oriented模型，该模型稳定后用作生成器的base模型，训练带gan的模型，损失采用L1 loss+ perceptual loss(即VGG loss) + Gan loss。</li>
+<li>训练过程中sharpen GT：论文使用了一个trick，它对GT进行sharpen以使得label更加清晰，这个模型被称为Real-ESRTGAN+。实验确实表明了Real-ESRGAN+得到的结果更加sharpen，但也会引入一些过锐的artifacts，如振铃效应和过冲伪影。</li>
+<li>引入exponential moving average（EMA），维护模型的一个影子权重，计算移动均值，减少训练的抖动，提升模型的稳定性和性能。</li>
+</ul>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>这三个模型的演进是超分技术从“实验室数据”走向“现实复杂场景”的过程：SRGAN 首次引入 GAN 和感知损失，解决了传统 MSE 损失导致图像模糊的问题，让网络能生成高频纹理细节；ESRGAN 则对网络架构进行了大改（去掉 BN 层、引入 RRDB 密集残差块）并换用相对判别器，大幅减少了生成伪影，提升了画质和训练稳定性；Real-ESRGAN 直接沿用 ESRGAN 的核心网络结构，但重点攻克了训练数据生成问题，通过构建“二阶高阶退化模型”（反复叠加各种模糊核、噪声、Sinc 振铃和 JPEG 压缩），让模型学会了处理现实世界中真正残缺模糊的“烂图”。因此，SRGAN 是超分领域的开山之作，ESRGAN 则是对 SRGAN 的全面升级，而 Real-ESRGAN 则是将 ESRGAN 的能力真正落地到现实世界中的关键一步。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://www.cosmosh.ink">Qz</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://www.cosmosh.ink/2026/03/20/SRGAN-ESRGAN-RealESRGAN/">https://www.cosmosh.ink/2026/03/20/SRGAN-ESRGAN-RealESRGAN/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://www.cosmosh.ink" target="_blank">Qz's Blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/CV/">CV</a><a class="post-meta__tags" href="/tags/GAN/">GAN</a><a class="post-meta__tags" href="/tags/ESRGAN/">ESRGAN</a><a class="post-meta__tags" href="/tags/SR/">SR</a></div><div class="post-share"><div class="social-share" data-image="/img/avatar.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2026/03/19/%E7%94%9F%E6%88%90%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN/" title="生成对抗网络GAN"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">生成对抗网络GAN</div></div><div class="info-2"><div class="info-item-1">论文：https://arxiv.org/abs/1406.2661参考：https://www.bilibili.com/video/BV1rb4y187vD      https://zhuanlan.zhihu.com/p/266677860 前言GAN（Generative Adversarial...</div></div></div></a><a class="pagination-related" href="/2026/03/21/USRNet/" title="USRNet"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">USRNet</div></div><div class="info-2"><div class="info-item-1">论文：http://openaccess.thecvf.com/content_CVPR_2020/papers/Zhang_Deep_Unfolding_Network_for_Image_Super-Resolution_CVPR_2020_paper.pdf参考：https://zhuanlan.zhihu.com/p/140507840 前言图像超分模型的目标，就是将一张以某种方式退化的图像还原回原始图像。图像退化的过程是不可逆的，必然会损失一些像素级的信息（由此就引出了不同模型的不同优化目标，例如有的模型追求数学上更接近原始图，如PSNR，有的模型则追求感知上更接近原始图，如GAN）。一般而言，广义降质过程可以通过如下公式进行刻画：  y = (x \otimes k)\downarrow_s + n其中$y$是退化图像，$x$是原始图像，$k$是卷积核（模糊核），$\otimes$表示卷积操作，$\downarrow_s$表示下采样操作，$n$表示噪声。根据模糊核k，噪声水平$\sigma$，与下采样操作s的已知与否，图像超分任务分为非盲超分（non-blind...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/03/21/USRNet/" title="USRNet"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-21</div><div class="info-item-2">USRNet</div></div><div class="info-2"><div class="info-item-1">论文：http://openaccess.thecvf.com/content_CVPR_2020/papers/Zhang_Deep_Unfolding_Network_for_Image_Super-Resolution_CVPR_2020_paper.pdf参考：https://zhuanlan.zhihu.com/p/140507840 前言图像超分模型的目标，就是将一张以某种方式退化的图像还原回原始图像。图像退化的过程是不可逆的，必然会损失一些像素级的信息（由此就引出了不同模型的不同优化目标，例如有的模型追求数学上更接近原始图，如PSNR，有的模型则追求感知上更接近原始图，如GAN）。一般而言，广义降质过程可以通过如下公式进行刻画：  y = (x \otimes k)\downarrow_s + n其中$y$是退化图像，$x$是原始图像，$k$是卷积核（模糊核），$\otimes$表示卷积操作，$\downarrow_s$表示下采样操作，$n$表示噪声。根据模糊核k，噪声水平$\sigma$，与下采样操作s的已知与否，图像超分任务分为非盲超分（non-blind...</div></div></div></a><a class="pagination-related" href="/2026/03/19/%E7%94%9F%E6%88%90%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN/" title="生成对抗网络GAN"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-19</div><div class="info-item-2">生成对抗网络GAN</div></div><div class="info-2"><div class="info-item-1">论文：https://arxiv.org/abs/1406.2661参考：https://www.bilibili.com/video/BV1rb4y187vD      https://zhuanlan.zhihu.com/p/266677860 前言GAN（Generative Adversarial...</div></div></div></a><a class="pagination-related" href="/2026/03/12/DDPM%E7%9A%84%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3/" title="DDPM的核心思想"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-12</div><div class="info-item-2">DDPM的核心思想</div></div><div class="info-2"><div class="info-item-1">本文旨在用最简短的篇幅，描述DDPM的核心思想与设计动机，仅作为日后回顾DDPM的一个记忆锚点，具体公式和代码请参考其它资料。本文尽可能省略一切数学推导，跳略的推导会标注出来。 参考：https://zhuanlan.zhihu.com/p/650394311      https://lilianweng.github.io/posts/2021-07-11-diffusion-models/ 生成模型的目标，就是从一张随机图像（如纯噪声）开始，生成一张“真实”的图像，这里的“真实”是指生成的图像符合实际图像的概率分布（例如，一个人拥有黄色或白色皮肤的概率是比较大的，但是拥有蓝色皮肤却是几乎不可能的）。尽管现在大多数生成模型都支持根据输入的文字生成对应内容的图片，但那也只是通过在模型的每个模块加上文字的特征表示而训练得到的，对模型的整体结构影响不大，因此本文主要介绍DDPM从噪声生图的核心思想。 DDPM（以及所有生成式模型）的优化目标是让模型产生的图片分布和真实图片分布尽量相似，那么就有了以下推导过程：  为了使模型产生的图片分布和真实图片分布尽可能相似，我们要求...</div></div></div></a><a class="pagination-related" href="/2026/03/15/Diffusion-Transformer/" title="Diffusion Transformer"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-15</div><div class="info-item-2">Diffusion Transformer</div></div><div class="info-2"><div class="info-item-1">原论文：https://arxiv.org/abs/2212.09748 参考：建议先看https://zhuanlan.zhihu.com/p/683657190      再看https://zhuanlan.zhihu.com/p/684125968， 会对DiT有一个相当透彻的理解  以下为Gemini概括的我在学习DiT过程中的对话内容,内容覆盖较为片面，仅供参考：  1. 核心架构：从 DDPM 到 DiTDiT 并不是脱离传统扩散模型的全新物种，而是对现有框架的“换擎升级”。  骨干网络替换：DiT 将传统 DDPM（去噪扩散概率模型）中基于 CNN 的 U-Net 替换成了 Vision Transformer (ViT)。 潜在扩散模型 (LDM)：DiT 并不直接在原始像素空间生成图像，而是运行在由 VAE（变分自编码器）压缩后的 潜在空间 (Latent Space) 中。 VAE 的双重角色： 训练阶段（不可或缺）：使用基于 CNN 的 VAE 编码器，将高分辨率图像压缩为低维潜在表示（建立潜在空间的数学分布），大幅降低 Transformer...</div></div></div></a><a class="pagination-related" href="/2026/03/16/Just-image-Transformer/" title="Just image Transformer"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-16</div><div class="info-item-2">Just image Transformer</div></div><div class="info-2"><div class="info-item-1">原论文：https://www.alphaxiv.org/abs/2511.13720参考：https://zhuanlan.zhihu.com/p/1977479109690032906      https://zhuanlan.zhihu.com/p/1974626511182124468 1.扩散模型的发展历史在生成式模型领域，如GAN相比，扩散模型（如DDPM）一直被诟病的一个问题就是它的计算效率较低，因为像DDPM这样的模型的增噪，采样，去噪过程全部都是在原始图像的像素空间（pixel space）中进行的，除非图片的分辨率非常小（如16x16x3），否则该pixel space的维度是非常高的，导致模型的计算量和内存占用都非常大。ADM对DDPM进行了改进，但与GAN相比，效率依然差得很远。为了提升模型效率，Latent Diffusion Model（LDM）架构被提出，该架构包含一个VAE编码器，用于将图片从pixel space映射到一个低维的latent space中；一个针对latent...</div></div></div></a><a class="pagination-related" href="/2026/03/09/Swin-Transformer%E8%AE%BA%E6%96%87%E7%B2%BE%E8%AF%BB-%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" title="Swin Transformer论文精读-学习笔记"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-09</div><div class="info-item-2">Swin Transformer论文精读-学习笔记</div></div><div class="info-2"><div class="info-item-1">原论文链接：https://arxiv.org/abs/2103.14030原视频链接：https://www.bilibili.com/video/BV13L4y1475U 前言Swin Transformer，也就是Hierarchical Shifted Window Vision Transformer，是一种基于Transformer架构的计算机视觉模型，旨在解决传统Transformer在处理高分辨率图像时计算成本过高的问题。Swin Transformer通过引入窗口注意力机制和滑动窗口策略，有效地降低了计算复杂度，同时保持了强大的特征表达能力。Swin Transformer还在ViT的基础上，引入了类似传统CNN的分块的层级式结构，从而能够提取图像在不同尺度上的特征。此外，Swin Transformer在CV的绝大多数任务上都取得了优异的表现，再次证明了Transformer在CV领域的可行性与有效性，成为近年来计算机视觉领域的重要研究方向之一。 Swin...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/avatar.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Qz</div><div class="author-info-description">Жизнь полюбить больше, чем смысл ее? — Непременно так, полюбить прежде логики...</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">23</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">32</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">26</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/Qz06"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/Qz06" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="/2791144859@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#SRGAN"><span class="toc-number">1.</span> <span class="toc-text">SRGAN</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#ESRGAN"><span class="toc-number">2.</span> <span class="toc-text">ESRGAN</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%9F%E6%88%90%E5%99%A8%E6%9E%B6%E6%9E%84%E4%BF%AE%E6%94%B9"><span class="toc-number">2.1.</span> <span class="toc-text">生成器架构修改</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%84%9F%E7%9F%A5%E6%8D%9F%E5%A4%B1%E7%9A%84%E6%94%B9%E8%BF%9B"><span class="toc-number">2.2.</span> <span class="toc-text">感知损失的改进</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AF%B9%E5%88%A4%E5%88%AB%E5%99%A8%E8%BE%93%E5%87%BA%E7%9A%84%E6%94%B9%E8%BF%9B"><span class="toc-number">2.3.</span> <span class="toc-text">对判别器输出的改进</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BD%91%E7%BB%9C%E6%8F%92%E5%80%BC"><span class="toc-number">2.4.</span> <span class="toc-text">网络插值</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#RealESRGAN"><span class="toc-number">3.</span> <span class="toc-text">RealESRGAN</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%AB%98%E9%98%B6%E9%80%80%E5%8C%96"><span class="toc-number">3.1.</span> <span class="toc-text">高阶退化</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#sinc-filter"><span class="toc-number">3.2.</span> <span class="toc-text">sinc filter</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%A4%E5%88%AB%E5%99%A8%E7%9A%84%E6%94%B9%E5%8A%A8"><span class="toc-number">3.3.</span> <span class="toc-text">判别器的改动</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%9F%E6%88%90%E5%99%A8"><span class="toc-number">3.4.</span> <span class="toc-text">生成器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AE%AD%E7%BB%83%EF%BC%9A"><span class="toc-number">3.5.</span> <span class="toc-text">训练：</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">4.</span> <span class="toc-text">总结</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/04/17/%E8%BF%BD%E6%B1%82%E5%8D%93%E8%B6%8A/" title="追求卓越">追求卓越</a><time datetime="2026-04-17T15:51:24.000Z" title="发表于 2026-04-17 23:51:24">2026-04-17</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/21/USRNet/" title="USRNet">USRNet</a><time datetime="2026-03-21T04:40:32.000Z" title="发表于 2026-03-21 12:40:32">2026-03-21</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/20/SRGAN-ESRGAN-RealESRGAN/" title="SRGAN,ESRGAN,RealESRGAN">SRGAN,ESRGAN,RealESRGAN</a><time datetime="2026-03-20T04:20:00.000Z" title="发表于 2026-03-20 12:20:00">2026-03-20</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/19/%E7%94%9F%E6%88%90%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN/" title="生成对抗网络GAN">生成对抗网络GAN</a><time datetime="2026-03-19T11:20:04.000Z" title="发表于 2026-03-19 19:20:04">2026-03-19</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/18/SwinIR/" title="SwinIR">SwinIR</a><time datetime="2026-03-18T11:00:13.000Z" title="发表于 2026-03-18 19:00:13">2026-03-18</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2019 - 2026 By Qz</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.3.0</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.3.3</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax/es5/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script></div><canvas class="fireworks" mobile="false"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/fireworks.min.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js"></script></div></div><script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":false},"log":false});</script></body></html>
