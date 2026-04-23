@@ -445,9 +445,9 @@
             
             <tag> CV </tag>
             
-            <tag> Diffusion Model </tag>
-            
             <tag> PyTorch </tag>
+            
+            <tag> Diffusion Model </tag>
             
         </tags>
       
@@ -484,9 +484,9 @@
             
             <tag> CV </tag>
             
-            <tag> Diffusion Model </tag>
-            
             <tag> PyTorch </tag>
+            
+            <tag> Diffusion Model </tag>
             
         </tags>
       
@@ -827,11 +827,11 @@
             
             <tag> PyTorch </tag>
             
+            <tag> 造轮子 </tag>
+            
             <tag> ResNet </tag>
             
             <tag> CNN </tag>
-            
-            <tag> 造轮子 </tag>
             
         </tags>
       
