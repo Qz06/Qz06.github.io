@@ -1,0 +1,296 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Flow matching 与 Rectified flow | Qz's Blog</title><meta name="author" content="Qz"><meta name="copyright" content="Qz"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="参考：先看文章一      再看文章二  Occam’s razor:Entities must not be multiplied beyond necessity  前言我们知道，图像生成模型的根本目的在于找到一个从先验分布到数据分布到映射。在现实世界中，我们只有真实数据和纯噪声，而看不到从噪声到数据的中间过渡过程，那么，我们的模型就需要建模这个过程，使得在这样的过程假设下（注意，这里说的是“">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Flow matching 与 Rectified flow">
+<meta property="og:url" content="https://www.cosmosh.ink/2026/04/23/Flow-matching-%E4%B8%8E-Rectified-flow/index.html">
+<meta property="og:site_name" content="Qz&#39;s Blog">
+<meta property="og:description" content="参考：先看文章一      再看文章二  Occam’s razor:Entities must not be multiplied beyond necessity  前言我们知道，图像生成模型的根本目的在于找到一个从先验分布到数据分布到映射。在现实世界中，我们只有真实数据和纯噪声，而看不到从噪声到数据的中间过渡过程，那么，我们的模型就需要建模这个过程，使得在这样的过程假设下（注意，这里说的是“">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.cosmosh.ink/img/avatar.png">
+<meta property="article:published_time" content="2026-04-23T08:47:47.000Z">
+<meta property="article:modified_time" content="2026-04-23T13:57:37.500Z">
+<meta property="article:author" content="Qz">
+<meta property="article:tag" content="Generative Model">
+<meta property="article:tag" content="CV">
+<meta property="article:tag" content="flow matching">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.cosmosh.ink/img/avatar.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Flow matching 与 Rectified flow",
+  "url": "https://www.cosmosh.ink/2026/04/23/Flow-matching-%E4%B8%8E-Rectified-flow/",
+  "image": "https://www.cosmosh.ink/img/avatar.png",
+  "datePublished": "2026-04-23T08:47:47.000Z",
+  "dateModified": "2026-04-23T13:57:37.500Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "Qz",
+      "url": "https://www.cosmosh.ink/"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://www.cosmosh.ink/2026/04/23/Flow-matching-%E4%B8%8E-Rectified-flow/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":200,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Flow matching 与 Rectified flow',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 7.3.0"></head><body><div id="web_bg" style="background-image: url(/img/bg.png);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/avatar.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">26</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">36</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">29</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div><div class="menus_item"><a class="site-page" href="/gallery/"><i class="fa-fw fas fa-images"></i><span> 相册</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-rocket"></i><span> 资源</span></a></div><div class="menus_item"><a class="site-page" href="/life/"><i class="fa-fw fas fa-dna"></i><span> 游戏</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/img/arc-bg.jpg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">Qz's Blog</span></a><a class="nav-page-title" href="/"><span class="site-name">Flow matching 与 Rectified flow</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div><div class="menus_item"><a class="site-page" href="/gallery/"><i class="fa-fw fas fa-images"></i><span> 相册</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-rocket"></i><span> 资源</span></a></div><div class="menus_item"><a class="site-page" href="/life/"><i class="fa-fw fas fa-dna"></i><span> 游戏</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">Flow matching 与 Rectified flow</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-04-23T08:47:47.000Z" title="发表于 2026-04-23 16:47:47">2026-04-23</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-04-23T13:57:37.500Z" title="更新于 2026-04-23 21:57:37">2026-04-23</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/">技术</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/AI/">AI</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/AI/CV/">CV</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/AI/CV/Generative-Model/">Generative Model</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/AI/CV/Generative-Model/flow-matching/">flow matching</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><p>参考：<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/1946706315792619506">先看文章一</a><br>      <a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/4116861550">再看文章二</a></p>
+<blockquote>
+<p><strong><em>Occam’s razor:Entities must not be multiplied beyond necessity</em></strong></p>
+</blockquote>
+<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>我们知道，图像生成模型的根本目的在于找到一个从先验分布到数据分布到映射。在现实世界中，我们只有真实数据和纯噪声，而看不到从噪声到数据的中间过渡过程，那么，我们的模型就需要建模这个过程，使得在这样的过程假设下（注意，这里说的是“假设”，因为根本不存在一个“客观正确”的转换过程），模型能够产生一个与数据分布尽可能接近的分布。Flow matching实际上提出了一种高度抽象化概括性的过渡假设：它借鉴了物理学中连续性方程的概念，概率分布就像一个凹凸不平的曲面（高维空间中应该是凹凸不平的流形），这个曲面由大量的流体粒子构成，流体会随时间发生流动迁移，那么该曲面（分布）也会逐渐变化，这种概率（分布）的“流动”就叫做概率流。为什么说这种假设是高度抽象化概括性的呢？因为它不依赖任何特殊的前提或性质（如DDPM就依赖Markov性质），只是简单的刻画概率分布的连续转移过程，限制条件只有两条：1，变化是连续的，这个非常合理，也更好处理；2，“流体”总量是守恒的，这个不用说，毕竟概率之和恒为一。这种极简的假设，为该模型带来了很好的通用性与生成效果，并且在实践层面的处理过程也非常简单。</p>
+<h1 id="预备知识"><a href="#预备知识" class="headerlink" title="预备知识"></a>预备知识</h1><h2 id="物理学中的连续性方程"><a href="#物理学中的连续性方程" class="headerlink" title="物理学中的连续性方程:"></a>物理学中的连续性方程:</h2><script type="math/tex; mode=display">
+\frac{\partial \rho (\mathrm{x}, t)}{\partial t} + \nabla \mathrm{j} (\mathrm{x}, t) = 0 \\</script><p>其中$\rho$是概率密度，$\partial \rho (\mathrm{x}, t) / \partial t$是概率密度随时间的变化率，$\nabla \mathrm{j} (\mathrm{x}, t)$是概率流的散度，表示概率流的发散程度，衡量从点周围一个无穷小体积元中净流出的概率流的强度。散度大于0，说明概率流从该点流出，该点的概率密度在减少；散度小于0，说明概率流流入该点，该点的概率密度在增加；散度等于0，说明该点的概率密度保持不变。</p>
+<h2 id="概率路径与流映射"><a href="#概率路径与流映射" class="headerlink" title="概率路径与流映射"></a>概率路径与流映射</h2><p><img src="/img/fm1.png" alt="alt text"></p>
+<h2 id="Normalizing-Flow-amp-Continuous-Normalizing-Flow"><a href="#Normalizing-Flow-amp-Continuous-Normalizing-Flow" class="headerlink" title="Normalizing Flow &amp; Continuous Normalizing Flow"></a>Normalizing Flow &amp; Continuous Normalizing Flow</h2><p><img src="/img/fm2.png" alt="alt text"><br><img src="/img/fm3.png" alt="alt text"><br><img src="/img/fm4.png" alt="alt text"></p>
+<h1 id="Flow-matching"><a href="#Flow-matching" class="headerlink" title="Flow matching"></a>Flow matching</h1><p><img src="/img/fm5.png" alt="alt text"><br><img src="/img/fm6.png" alt="alt text"><br>注意，这里的速度场$u_t(x)$并不是真实存在或可测量的，而是我们假设出来的，或者说“我们认为粒子实际上应该怎么运动”。后续可以看到，我们通过假设的条件分布$p_t(x|x_1)$或flow map$\psi_t(x;x_1)$，可以通过求解连续性方程来推出对应的速度场$u_t(x)$。</p>
+<p>现在的问题是，我们并不知道这个参考速度场$u_t(x)$和这群粒子的概率路径$p_t(x)$，因此上述目标其实并不可行。下面，我们来解决$u_t(x)$和$p_t(x)$的untractable问题。</p>
+<h2 id="条件概率路径的平均可以近似边缘概率路径"><a href="#条件概率路径的平均可以近似边缘概率路径" class="headerlink" title="条件概率路径的平均可以近似边缘概率路径"></a>条件概率路径的平均可以近似边缘概率路径</h2><p>给定一个真实数据分布中的样本$x_1$，我们可以通过条件概率分布的混合来构建我们想要的目标概率路径，即：</p>
+<script type="math/tex; mode=display">
+p_t(x) = \int p_t(x|x_1)q(x_1) \mathrm{d}x_1 \\</script><p>这个条件概率分布 $p_t(x|x_1)$ 也是一个概率路径，它的含义是：在终点为 $x_1$ 的前提下粒子的概率路径。并且，这个概率路径需要符合两个条件：第一，在 $t=0$ 时刻 $p_0(x|x_1)=p(x)$，即初始时刻服从简单分布；第二，作者们设计在 $t=1$ 时刻，$p_1(x|x_1)=\mathcal{N}(x|x_1, \sigma_{min}^2 I)$，并且 $\sigma_{min}$ 足够小，这个条件的含义是 $t=1$ 时刻，粒子应该聚集在终点 $x_1$ 附近，服从以 $x_1$ 为均值的高斯分布。如何理解这两个条件呢？首先，第一个条件保证了，所有那些最终能够生成$x_1$的粒子，在初始时刻都是随机分布的，真实数据样本并不偏好先验分布中某一区域的粒子，先验分布中的每一个粒子都有同样的机会成为生成$x_1$的粒子；第二个条件保证了在$t=1$时刻，所有能够生成$x_1$的粒子都聚集在$x_1$附近很小的一个区域内，这么做的动机是显然的，因为这个条件概率路径的条件就是假设终点是$x_1$。</p>
+<p>这样，我就可以多次采样$x_1$，每次采样得到一个条件概率路径$p_t(x|x_1)$，这些条件概率路径的平均就近似了我们想要的边缘概率路径$p_t(x)$了。</p>
+<h2 id="条件速度与边缘速度在优化效果上是等价的"><a href="#条件速度与边缘速度在优化效果上是等价的" class="headerlink" title="条件速度与边缘速度在优化效果上是等价的"></a>条件速度与边缘速度在优化效果上是等价的</h2><p>针对$u_t(x)$的untractable问题，首先，推导出</p>
+<script type="math/tex; mode=display">
+u_t(x) = \int u_t(x | x_1) \frac{p_t(x | x_1) q(x_1)}{p_t(x)} \mathrm{d}x_1</script><p>代入原始loss:</p>
+<script type="math/tex; mode=display">
+\mathcal{L}_{marg} = \mathbb{E}_t \mathbb{E}_{x\sim p_t} ||v_t(x) - u_t(x)||^2 \\</script><p>再通过方差-偏差分解，得到</p>
+<script type="math/tex; mode=display">
+\mathbb{E}_{t,\,x_1\sim q,\,x\sim p_t(\cdot\mid x_1)}\,\big\|v_t(x)-u_t(x\mid x_1)\big\|^2 = \mathcal{L}_{marg} + \mathrm{nonnegative\ variance\ term} \\</script><p>所以我们可以直接优化左边那项来间接达到优化原始目标函数的效果。因此，作者们提出使用左边这项作为Conditional Flow Matching（CFM）的目标函数进行优化：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}_{CFM}(\theta) = \mathbb{E}_{t, q(x_1),p_t(x|x_1)}||v_t(x)-u_t(x | x_1)||^2 \\</script><h2 id="构造概率路径"><a href="#构造概率路径" class="headerlink" title="构造概率路径"></a>构造概率路径</h2><p>现在，观察我们的目标函数$\mathcal{L}_{CFM}(\theta)$，可以看到，其中的$t$,$x_1\sim q$可以通过采样得到，$v_t(x)$是通过神经网络学习得到，而条件概率路径$p_t(x|x_1)$和条件速度场$u_t(x|x_1)$依然是未知的。实际上，这两个未知量具有天然的联系：粒子在速度场的“推动”下演化出了概率路径。有了概率路径，我们就可以反推出速度场。因此，我们先设法构造出这个概率路径。Flow matching中，作者将其设计成了一种高斯概率路径:</p>
+<script type="math/tex; mode=display">
+p_t(x|x_1) = \mathcal{N}(x|\mu_t(x_1), \sigma_t(x_1)^2 I) \\</script><p>其均值和方差都是关于时间$t$和终点$x_1$的函数。由于上面所写的对概率路径的两个条件，我们可以得到:</p>
+<script type="math/tex; mode=display">
+\mu_0(x_1) = 0,\ \sigma_0(x_1) = 1 \\
+\mu_1(x_1) = x_1,\ \sigma_1(x_1) = \sigma_{min}^2</script><p>那么现在的问题就是设计这两个函数了。实际上，满足这种条件的函数有无数种，作者们在论文中给出了两种选择：</p>
+<ul>
+<li>Diffusion路径：<script type="math/tex; mode=display">\mu_t(x_1) = \alpha_{1-t}x_1</script><script type="math/tex; mode=display">\sigma_t(x_1) = \sqrt{1 - \alpha_{1-t}^2}</script><script type="math/tex; mode=display">p_t(x|x_1) = \mathcal{N}(x|\alpha_{1-t}x_1, (1 - \alpha_{1-t}^2)I)</script></li>
+</ul>
+<p>其中，$\alpha_t = e^{-\frac{1}{2}T(t)}$, $T(t) = \int_0^t \beta(s)\mathrm{d}s$，这里的 $\beta(s)$ 就是 diffusion 论文中提到的 noise scale function。</p>
+<ul>
+<li>Optimal Transport (OT)路径：这个路径是形式最简单的，均值和方差的函数在二维平面上看就是连接起点和终点的一条直线<script type="math/tex; mode=display">\mu_t(x) = tx_1</script><script type="math/tex; mode=display">\sigma_t(x) = 1 - (1 - \sigma_{min})t</script><script type="math/tex; mode=display">p_t(x|x_1) = \mathcal{N}(x|tx_1, [1 - (1 - \sigma_{min})t]I)</script></li>
+</ul>
+<p>现在我们有了条件概率路径$p_t(x|x_1)$，但在实践中，我们并不会直接从这个条件概率路径中采样，而是对目标函数进行进一步优化：</p>
+<p>首先，根据$p_t(x|x_1)$，我们可以推出各个粒子的flow map:</p>
+<script type="math/tex; mode=display">
+x_t = \psi_t(x_0; x_1) = \sigma_t(x_1)x_0 + \mu_t(x_1)</script><p>为什么flow map是这个形式：注意到假如初始分布为$x_0 \sim \mathcal{N}(0, I)$，则将$x_t$代入上面的flow map，根据正态分布的性质，条件概率路径就刚好是我们上面定义的$p_t(x|x_1)$。说的更规范一点，将flow map作用于先验分布，就可以得到条件分布路径。这个<strong>Push-forward</strong>过程在原论文中有更详细的描述，可以参考原论文。</p>
+<p>那么我们就可以得到，对于任意可积函数f，都有:</p>
+<script type="math/tex; mode=display">
+\mathbb{E}_{x\sim p_t(\cdot | x_1)}[f(x)] = \mathbb{E}_{x_0 \sim p(x_0)}[f(\psi_t(x_0; x_1))] \\</script><p>也就是说，从某个中间时刻t采样，就等价于先从初始时刻采样，然后通过flow map把采样点“推”至中间时刻t。</p>
+<p>这样，就可以化简我们之前找到的CFM loss：</p>
+<script type="math/tex; mode=display">
+\begin{align} \mathcal{L}_{CFM}(\theta) &= \mathbb{E}_{t, q(x_1),p_t(x|x_1)}||v_t(x)-u_t(x | x_1)||^2 \\ &= \mathbb{E}_t \mathbb{E}_{q(x_1)} \mathbb{E}_{x\sim p_t(x|x_1)} || v_t(x) - u_t(x|x_1)||^2 \\ &= \mathbb{E}_t \mathbb{E}_{q(x_1)} \mathbb{E}_{x_0\sim p(x_0)} || v_t(\psi_t(x_0;x_1)) - u_t(\psi_t(x_0;x_1)|x_1)||^2 \ \quad (\text{将$x$替换成$\psi_t(x_0; x_1)$})\\ &= \mathbb{E}_{t, q(x_1),p(x_0)} || v_t(\psi_t(x_0)) - u_t(\psi_t(x_0)|x_1)||^2 \ \quad (\text{将$\psi_t(x_0;x_1)$简写成$\psi_t(x_0)$}) \end{align} \\</script><p>这个化简后的 CFM loss 使得我们可以从初始分布 $p(x_0)$ 采样来替代从 $p_t(x|x_1)$ 中采样，更为简单。</p>
+<h2 id="速度场可由CNF的ODE推出"><a href="#速度场可由CNF的ODE推出" class="headerlink" title="速度场可由CNF的ODE推出"></a>速度场可由CNF的ODE推出</h2><p>接下来，我们还有最后一个问题：$\mathcal{L}_{CFM}(\theta)$中的条件速度场$u_t(x|x_1)$是未知的。实际上，由于我们的flow map是在速度场的“推动下”产生的轨迹，因此自然可以用flow map推出速度场。联系它们的等式是CNF的ODE:</p>
+<script type="math/tex; mode=display">
+u_t(\psi_t(x_0;x_1) | x_1) = \frac{\mathrm{d} \psi_t(x_0;x_1)}{\mathrm{d} t} \\ \\</script><p>代入</p>
+<script type="math/tex; mode=display">
+\psi_t(x_0;x_1) = \sigma_t(x_1)x_0 + \mu_t(x_1)</script><p>解得</p>
+<script type="math/tex; mode=display">
+\begin{align} u_t(x|x_1) &= \sigma_t'(x_1) \frac{x - \mu_t(x_1)}{\sigma_t(x_1)} + \mu_t'(x_1) \\ &=\frac{\sigma_t'(x_1)}{\sigma_t(x_1)}(x - \mu_t(x_1)) + \mu_t'(x_1) \end{align} \\ 对于任意 x = \psi_t(x_0;x_1) = \sigma_t(x_1)x_0 + \mu_t(x_1) \\</script><p>这样我们就顺利构建了想要的条件速度场 $u_t(x|x_1)$。</p>
+<p>对于我们之前提到的两种路径，其条件速度场形式分别为：</p>
+<ul>
+<li><p>Diffusion路径：</p>
+<script type="math/tex; mode=display">
+u_t(x|x_1) = \frac{\alpha'_{1-t}}{1-\alpha_{1-t}^2}(\alpha_{1-t}x - x_1)</script></li>
+<li><p>OT路径：</p>
+<script type="math/tex; mode=display">
+u_t(x|x_1) = \frac{x_1 - (1-\sigma_{min})x}{1-(1-\sigma_{min})t}</script></li>
+</ul>
+<p>实践中，由于 OT 路径更为简单，因此采取第二种形式进行优化：</p>
+<script type="math/tex; mode=display">
+\mu_t(x) = tx_1, \sigma_t(x) = 1 - (1 - \sigma_{min})t</script><script type="math/tex; mode=display">
+\psi_t(x) = (1 - (1 - \sigma_{min})t)x + tx_1</script><script type="math/tex; mode=display">
+\begin{aligned} u_t(\psi_t(x_0;x_1)|x_1) &= \frac{\mathrm{d}\psi_t(x_0;x_1)}{\mathrm{d}t} \\ &= x_1 - (1 - \sigma_{min})x_0 \end{aligned}</script><p>最终我们得到了实践中常用的 CFM 目标函数：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}_{CFM}(\theta) = \mathbb{E}_{t, q(x_1), p(x_0)} ||v_t(\psi_t(x_0)) - (x_1 - (1 - \sigma_{min})x_0)||^2</script><p>现在，我们得到了所需的所有组件。以下为训练过程:</p>
+<ul>
+<li>首先，从数据分布 $q(x_1)$ 中采样一个数据样本 $x_1$ 作为终点，从初始分布 $p(x_0)$ 中采样起点样本 $x_0$，从均匀分布采样时间 $t \sim \mathcal{U}(0, 1)$；</li>
+<li>计算给定的 flow map 来构造中间状态点：<script type="math/tex; mode=display">
+\psi_t(x_0) = (1 - (1 - \sigma_{min})t)x_0 + tx_1</script></li>
+<li>将中间状态点 $\psi_t(x_0)$ 输入模型 $v_t(\cdot; \theta)$，得到预测速度场输出；</li>
+<li>计算目标速度场：<script type="math/tex; mode=display">
+u_t(\psi_t(x_0)|x_1) = x_1 - (1 - \sigma_{min})x_0</script></li>
+<li>计算最终的均方误差损失：<script type="math/tex; mode=display">
+\mathcal{L}_{CFM}(\theta) = \mathbb{E}_{t, q(x_1), p(x_0)} ||v_t(\psi_t(x_0)) - (x_1 - (1 - \sigma_{min})x_0)||^2</script></li>
+</ul>
+<p>通过反向传播优化参数 $\theta$，使模型逐渐学会逼近真实向量场。</p>
+<h1 id="关于Flow-matching的一些insight"><a href="#关于Flow-matching的一些insight" class="headerlink" title="关于Flow matching的一些insight"></a>关于Flow matching的一些insight</h1><ol>
+<li>我们希望模型学到的是边缘速度场$u_t(x)$，但模型实际上学到的是“平均条件速度场”$E_{x_1\sim q}u_t(x|x_1)$，从统计上讲，只要参与训练的样本够多，模型学到的“平均条件速度”和“边缘速度”是相等的。但是这样有个问题：由于每次在数据分布中的采样的真实图都是不确定的，从先验分布采样的噪声也是随机的，模型往往会学到不同速度的平均，最终导致中庸的结果，影响成像质量。</li>
+<li>关于条件分布：首先想象我们有一大群随机的粒子（先验分布），这一大群粒子逐渐过渡到了某种特殊的形状（数据分布）。在给定$x_1$下，得到的条件概率路径，或条件速度场，就相当于我们选取了最终数据分布的某一小片区域（实际上是某一个数据点），然后观察：在起初的一大批随机粒子中，有哪些粒子是最终移动到这个选定的数据点的？然后只保留这些数据点，把其他的数据点忽略。这样，这些数据点的概率路径就是条件概率路径，其中每一个粒子都是径直走向$x_1$的，并且由于这些点的起始位置互不相同，而且它们都是走直线，所以路径不会相交。但是，如果考虑数据分布的所有点，那么在同一个位置可能就有多个速度，最终模型学到的速度是所有这些速度的叠加。在条件速度场中，如果在t=0时刻向速度场中放一个粒子，它会走直线到$x_1$，但如果是叠加的速度场，则该粒子大概率是走曲线，因为不能保证叠加后的速度场仍然是恒定(x1-x0)的。</li>
+<li>通过一系列推导，我们发现最终的条件速度场是个定值x1-x0，很多人对Flow matching的印象也是“直接预测噪声图与真实图的差异”。值得注意的是，无论是“速度为定值”还是“轨迹（即flow map）为直线”，都指的是在<strong>给定了x1作为条件的情况下</strong>，而实际的边缘速度是各个条件速度的加权，大概率不是定值，那么实际的轨迹也大概率是一条曲线，尽管拟合目标是所谓的直线，但实际边缘分布或者推动边缘分布的速度场，仍然是曲线，所以才有类似2-reflow或者OT-CFM等工作出来，尽可能将曲线拉直。曲线轨迹有什么问题呢？我们在实际生成图片时，是不知道真实图像x1的，也就不存在条件速度场，我们能使用的，有且只有边缘速度场，而边缘速度场产生的轨迹是曲线，这就导致求解ODE时，每一步不能走的太大，必须一点一点严格按照曲线的轨迹前进，才能到达数据分布，如果步长太大，很容易脱离轨迹，甚至进入流形的“涡流区”，得到完全错误的数据分布。简单来说，曲线边缘速度场会大大影响生成效率的生成质量，而如果边缘速度场也是定值（直线），就可以以更少的步数生成更好的图片。</li>
+<li>为什么会产生曲线的边缘速度场？想象一下，在高维空间中，由于每次对x0和x1的采样都是随机的，假如第一次采集到了左下角的x0和右上角的x1，那么模型想要预测的速度是指向右上方的；而第二次采集到了右下角的x0和左上角的x1，那么模型想要预测的速度是指向左上方的。这样多次采样的轨迹发生了交叉，模型预测的速度也被迫进行了平均—指向正上方，然而正上方什么也没有。因此我们希望尽量避免轨迹的交叉，一个解决办法就是在采样时就选取距离最近的一对(x0,x1)，这样两两搭配，可以一定程度避免交叉，这正是OT-CFM的思路。</li>
+<li>既然很多情况下曲线是由于样本配对的随机性导致的，那么消解的方法其实也很直观，就是尽可能减少传输距离，使得某一些分布能固定传输到离它最近的分布里，从实操上看大体有两种方法：(1) 通过reflow论文里提到的方式，因为我们看到虽然路径是曲线，但训练好的模型能自动帮训练样本找到最有传输路径对应的分布，所以通过pretrain好的flow模型进行再次采样得到训练集，再训练一个flow模型，以此往复n次，那么理论上讲得到的路径会越来越直，但也会因为逐渐累积误差导致性能下降；(2) 对于训练样本，直接对传输距离进行优化，那么就能尽可能避免路径交叉的问题；无论是对于(1)还是对于(2)，我们应当充分认识到，现实中的数据分布是相当复杂的，光靠简单的方法仍然是很难实现所谓的“走直线”的目标的；</li>
+<li>既然“条件轨迹”可能交叉，那为什么最终的“边缘轨迹”却不会交叉？可以参考物理中的磁感线—因为叠加后的速度方向是唯一的。</li>
+<li>在第1点中，一方面，只要训练样本足够多，那么条件速度场的平均就无限接近边缘速度场，这与我们的训练目标一致；另一方面，过多样本对(x0,x1)的叠加，会导致模型学到一个过于平均中立的速度场，这反而对生成不利。怎么理解这个矛盾？—首先，在现实世界中，我们有的只是先验分布和数据分布，实际上压根就不存在某种“客观正确”的演变过程，或者“绝对准确”的速度场，虽然我们试图用神经网络来拟合“真实”速度场u，但实际上，这个所谓的“真实速度”u却是由我们对概率流$\psi$的假设来构造出来的。也就是说，“统计上的正确”并不意味着这一结果对我们是有利的，因为我们的拟合目标很可能就是一个极度扭曲震荡的速度场。换句话说，既然这里的“真实速度场”是我们自己构造出来的，那么我们就要构造出一个对后续的图像生成最有利的速度场，也就是OT的”直线速度场“。如果我们不使用OT-CFM，可能构造出一个扭曲的速度场，在理论上，当我们的时间步采样足够密集，即求解ODE时采用的步长足够小，也能在这个速度场的引导下走到数据分布，生成合理的图片。但是，我们的时间有限，也不可能做到“无限密”采样，所以直线的边缘概率路径是更有利的：理论上讲，边缘概率路径是不是直线都一样，但实践中，直线更好。</li>
+</ol>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://www.cosmosh.ink">Qz</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://www.cosmosh.ink/2026/04/23/Flow-matching-%E4%B8%8E-Rectified-flow/">https://www.cosmosh.ink/2026/04/23/Flow-matching-%E4%B8%8E-Rectified-flow/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://www.cosmosh.ink" target="_blank">Qz's Blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Generative-Model/">Generative Model</a><a class="post-meta__tags" href="/tags/CV/">CV</a><a class="post-meta__tags" href="/tags/flow-matching/">flow matching</a></div><div class="post-share"><div class="social-share" data-image="/img/avatar.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/04/22/DDIM/" title="DDIM"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">DDIM</div></div><div class="info-2"><div class="info-item-1">参考：https://zhuanlan.zhihu.com/p/614147698      https://zhuanlan.zhihu.com/p/565698027     ...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/04/22/DDIM/" title="DDIM"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-04-22</div><div class="info-item-2">DDIM</div></div><div class="info-2"><div class="info-item-1">参考：https://zhuanlan.zhihu.com/p/614147698      https://zhuanlan.zhihu.com/p/565698027     ...</div></div></div></a><a class="pagination-related" href="/2026/03/12/DDPM%E7%9A%84%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3/" title="DDPM的核心思想"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-12</div><div class="info-item-2">DDPM的核心思想</div></div><div class="info-2"><div class="info-item-1">本文旨在用最简短的篇幅，描述DDPM的核心思想与设计动机，仅作为日后回顾DDPM的一个记忆锚点，具体公式和代码请参考其它资料。本文尽可能省略一切数学推导，跳略的推导会标注出来。 参考：https://zhuanlan.zhihu.com/p/650394311      https://lilianweng.github.io/posts/2021-07-11-diffusion-models/ 生成模型的目标，就是从一张随机图像（如纯噪声）开始，生成一张“真实”的图像，这里的“真实”是指生成的图像符合实际图像的概率分布（例如，一个人拥有黄色或白色皮肤的概率是比较大的，但是拥有蓝色皮肤却是几乎不可能的）。尽管现在大多数生成模型都支持根据输入的文字生成对应内容的图片，但那也只是通过在模型的每个模块加上文字的特征表示而训练得到的，对模型的整体结构影响不大，因此本文主要介绍DDPM从噪声生图的核心思想。 DDPM（以及所有生成式模型）的优化目标是让模型产生的图片分布和真实图片分布尽量相似，那么就有了以下推导过程：  为了使模型产生的图片分布和真实图片分布尽可能相似，我们要求...</div></div></div></a><a class="pagination-related" href="/2026/03/16/Just-image-Transformer/" title="Just image Transformer"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-16</div><div class="info-item-2">Just image Transformer</div></div><div class="info-2"><div class="info-item-1">原论文：https://www.alphaxiv.org/abs/2511.13720参考：https://zhuanlan.zhihu.com/p/1977479109690032906      https://zhuanlan.zhihu.com/p/1974626511182124468 1.扩散模型的发展历史在生成式模型领域，如GAN相比，扩散模型（如DDPM）一直被诟病的一个问题就是它的计算效率较低，因为像DDPM这样的模型的增噪，采样，去噪过程全部都是在原始图像的像素空间（pixel space）中进行的，除非图片的分辨率非常小（如16x16x3），否则该pixel space的维度是非常高的，导致模型的计算量和内存占用都非常大。ADM对DDPM进行了改进，但与GAN相比，效率依然差得很远。为了提升模型效率，Latent Diffusion Model（LDM）架构被提出，该架构包含一个VAE编码器，用于将图片从pixel space映射到一个低维的latent space中；一个针对latent...</div></div></div></a><a class="pagination-related" href="/2026/04/19/Score-based-models/" title="Score-based models"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-04-19</div><div class="info-item-2">Score-based models</div></div><div class="info-2"><div class="info-item-1">参考:https://yang-song.net/blog/2021/score/     https://yang-song.net/blog/2019/ssm/原论文:https://arxiv.org/pdf/1907.05600       https://arxiv.org/pdf/2011.13456       … 前言首先，无论是学习还是回顾，都非常建议先阅读这篇博文，作者为Yang Song，是score系列模型及其相关工作的核心人物。该文章从传统的likelihood-based models和implicit generative models讲起，通过它们的不足引出score functions,score-based models,score matching,Langevin dynamics sampling,annealed Langevin sampling,SDE,Probability flow...</div></div></div></a><a class="pagination-related" href="/2026/03/15/Diffusion-Transformer/" title="Diffusion Transformer"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-15</div><div class="info-item-2">Diffusion Transformer</div></div><div class="info-2"><div class="info-item-1">原论文：https://arxiv.org/abs/2212.09748 参考：建议先看https://zhuanlan.zhihu.com/p/683657190      再看https://zhuanlan.zhihu.com/p/684125968， 会对DiT有一个相当透彻的理解  以下为Gemini概括的我在学习DiT过程中的对话内容,内容覆盖较为片面，仅供参考：  1. 核心架构：从 DDPM 到 DiTDiT 并不是脱离传统扩散模型的全新物种，而是对现有框架的“换擎升级”。  骨干网络替换：DiT 将传统 DDPM（去噪扩散概率模型）中基于 CNN 的 U-Net 替换成了 Vision Transformer (ViT)。 潜在扩散模型 (LDM)：DiT 并不直接在原始像素空间生成图像，而是运行在由 VAE（变分自编码器）压缩后的 潜在空间 (Latent Space) 中。 VAE 的双重角色： 训练阶段（不可或缺）：使用基于 CNN 的 VAE 编码器，将高分辨率图像压缩为低维潜在表示（建立潜在空间的数学分布），大幅降低 Transformer...</div></div></div></a><a class="pagination-related" href="/2026/03/14/%E5%8F%98%E5%88%86%E8%87%AA%E7%BC%96%E7%A0%81%E5%99%A8VAE/" title="变分自编码器VAE"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-14</div><div class="info-item-2">变分自编码器VAE</div></div><div class="info-2"><div class="info-item-1">本文旨在用最简短的篇幅，描述VAE的核心思想与设计动机，仅作为日后回顾VAE的一个记忆锚点，具体公式和代码请参考其它资料。此外，本文尽可能省略一切数学推导 参考：https://zhuanlan.zhihu.com/p/574208925     ...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/avatar.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Qz</div><div class="author-info-description">Жизнь полюбить больше, чем смысл ее? — Непременно так, полюбить прежде логики...</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">26</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">36</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">29</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/Qz06"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/Qz06" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="/2791144859@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%A2%84%E5%A4%87%E7%9F%A5%E8%AF%86"><span class="toc-number">2.</span> <span class="toc-text">预备知识</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%89%A9%E7%90%86%E5%AD%A6%E4%B8%AD%E7%9A%84%E8%BF%9E%E7%BB%AD%E6%80%A7%E6%96%B9%E7%A8%8B"><span class="toc-number">2.1.</span> <span class="toc-text">物理学中的连续性方程:</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A6%82%E7%8E%87%E8%B7%AF%E5%BE%84%E4%B8%8E%E6%B5%81%E6%98%A0%E5%B0%84"><span class="toc-number">2.2.</span> <span class="toc-text">概率路径与流映射</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Normalizing-Flow-amp-Continuous-Normalizing-Flow"><span class="toc-number">2.3.</span> <span class="toc-text">Normalizing Flow &amp; Continuous Normalizing Flow</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Flow-matching"><span class="toc-number">3.</span> <span class="toc-text">Flow matching</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9D%A1%E4%BB%B6%E6%A6%82%E7%8E%87%E8%B7%AF%E5%BE%84%E7%9A%84%E5%B9%B3%E5%9D%87%E5%8F%AF%E4%BB%A5%E8%BF%91%E4%BC%BC%E8%BE%B9%E7%BC%98%E6%A6%82%E7%8E%87%E8%B7%AF%E5%BE%84"><span class="toc-number">3.1.</span> <span class="toc-text">条件概率路径的平均可以近似边缘概率路径</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9D%A1%E4%BB%B6%E9%80%9F%E5%BA%A6%E4%B8%8E%E8%BE%B9%E7%BC%98%E9%80%9F%E5%BA%A6%E5%9C%A8%E4%BC%98%E5%8C%96%E6%95%88%E6%9E%9C%E4%B8%8A%E6%98%AF%E7%AD%89%E4%BB%B7%E7%9A%84"><span class="toc-number">3.2.</span> <span class="toc-text">条件速度与边缘速度在优化效果上是等价的</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9E%84%E9%80%A0%E6%A6%82%E7%8E%87%E8%B7%AF%E5%BE%84"><span class="toc-number">3.3.</span> <span class="toc-text">构造概率路径</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%9F%E5%BA%A6%E5%9C%BA%E5%8F%AF%E7%94%B1CNF%E7%9A%84ODE%E6%8E%A8%E5%87%BA"><span class="toc-number">3.4.</span> <span class="toc-text">速度场可由CNF的ODE推出</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%85%B3%E4%BA%8EFlow-matching%E7%9A%84%E4%B8%80%E4%BA%9Binsight"><span class="toc-number">4.</span> <span class="toc-text">关于Flow matching的一些insight</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/04/23/Flow-matching-%E4%B8%8E-Rectified-flow/" title="Flow matching 与 Rectified flow">Flow matching 与 Rectified flow</a><time datetime="2026-04-23T08:47:47.000Z" title="发表于 2026-04-23 16:47:47">2026-04-23</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/04/22/DDIM/" title="DDIM">DDIM</a><time datetime="2026-04-22T11:47:52.000Z" title="发表于 2026-04-22 19:47:52">2026-04-22</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/04/19/Score-based-models/" title="Score-based models">Score-based models</a><time datetime="2026-04-19T11:38:16.000Z" title="发表于 2026-04-19 19:38:16">2026-04-19</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/04/17/%E8%BF%BD%E6%B1%82%E5%8D%93%E8%B6%8A/" title="追求卓越">追求卓越</a><time datetime="2026-04-17T15:51:24.000Z" title="发表于 2026-04-17 23:51:24">2026-04-17</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/21/USRNet/" title="USRNet">USRNet</a><time datetime="2026-03-21T04:40:32.000Z" title="发表于 2026-03-21 12:40:32">2026-03-21</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2019 - 2026 By Qz</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.3.0</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.3.3</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax/es5/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script></div><canvas class="fireworks" mobile="false"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/fireworks.min.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js"></script></div></div><script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":false},"log":false});</script></body></html>
