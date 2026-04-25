@@ -4,6 +4,33 @@
   
     
     <entry>
+      <title>怒放</title>
+      <link href="/2026/04/25/%E6%80%92%E6%94%BE/"/>
+      <url>/2026/04/25/%E6%80%92%E6%94%BE/</url>
+      
+        <content type="html"><![CDATA[<p>《毛泽东自传》<strong>“我的职位如此之低，以致人们都不屑和我来往。我的工作之一就是登记来馆读报的人名，不过这般人大半都不把我放在眼里。在这许多人名之中，我记得有几个是新文化运动著名的领袖，是我十分景仰的人。我很想和他们讨论关于政治和文化的事情，不过他们都是极忙的人，没有时间来倾听一个南边口音的图书佐理员所讲的话。<br>但是我不因此而丧气，我仍然参加哲学研究会和新闻学研究会，想藉此能听大学里的课程。<br>我自己在北平的生活是十分困苦的。我住在一个叫三眼井的地方，和另外七个人合住一个小房间，我们全体挤在炕上，连呼吸的地方都没有。每逢我翻身都得预先警告身旁的人。不过在公园和故宫的宫址我看到了北国的早春，在坚冰还盖着北海的时候，我看到了怒放的梅花。北京的树木引起了我无穷的欣赏。”</strong></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 随笔 </category>
+          
+          <category> 感悟 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 随笔 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>Flow matching 与 Rectified flow</title>
       <link href="/2026/04/23/Flow-matching-%E4%B8%8E-Rectified-flow/"/>
       <url>/2026/04/23/Flow-matching-%E4%B8%8E-Rectified-flow/</url>
@@ -441,11 +468,11 @@
       
         <tags>
             
-            <tag> Diffusion Model </tag>
-            
             <tag> Generative Model </tag>
             
             <tag> CV </tag>
+            
+            <tag> Diffusion Model </tag>
             
             <tag> PyTorch </tag>
             
@@ -480,11 +507,11 @@
       
         <tags>
             
-            <tag> Diffusion Model </tag>
-            
             <tag> Generative Model </tag>
             
             <tag> CV </tag>
+            
+            <tag> Diffusion Model </tag>
             
             <tag> PyTorch </tag>
             
@@ -786,13 +813,13 @@
             
             <tag> PyTorch </tag>
             
+            <tag> 造轮子 </tag>
+            
             <tag> NLP </tag>
             
             <tag> LSTM </tag>
             
             <tag> RNN </tag>
-            
-            <tag> 造轮子 </tag>
             
         </tags>
       
@@ -866,9 +893,9 @@
             
             <tag> Transformer </tag>
             
-            <tag> NLP </tag>
-            
             <tag> 造轮子 </tag>
+            
+            <tag> NLP </tag>
             
         </tags>
       
