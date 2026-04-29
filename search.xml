@@ -30,9 +30,9 @@
             
             <tag> CV </tag>
             
-            <tag> SR </tag>
-            
             <tag> IR </tag>
+            
+            <tag> SR </tag>
             
         </tags>
       
@@ -505,11 +505,11 @@
       
         <tags>
             
-            <tag> Diffusion Model </tag>
-            
             <tag> Generative Model </tag>
             
             <tag> CV </tag>
+            
+            <tag> Diffusion Model </tag>
             
             <tag> PyTorch </tag>
             
@@ -544,11 +544,11 @@
       
         <tags>
             
-            <tag> Diffusion Model </tag>
-            
             <tag> Generative Model </tag>
             
             <tag> CV </tag>
+            
+            <tag> Diffusion Model </tag>
             
             <tag> PyTorch </tag>
             
