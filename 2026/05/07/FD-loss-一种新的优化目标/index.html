@@ -1,0 +1,303 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>FD-loss:一种新的优化目标 | Qz's Blog</title><meta name="author" content="Qz"><meta name="copyright" content="Qz"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="原论文：Representation Fréchet Loss for Visual Generation 预备：Fréchet DistanceFréchet Distance（FD）是一种衡量两个概率分布之间差异的指标，常用于评估生成模型生成图像的质量。它通过计算生成图像和真实图像在特征空间中的均值和协方差来衡量两者之间的距离。 令 $\phi(\cdot)$ 表示一个特征提取器。给定真实图像">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FD-loss:一种新的优化目标">
+<meta property="og:url" content="https://www.cosmosh.ink/2026/05/07/FD-loss-%E4%B8%80%E7%A7%8D%E6%96%B0%E7%9A%84%E4%BC%98%E5%8C%96%E7%9B%AE%E6%A0%87/index.html">
+<meta property="og:site_name" content="Qz&#39;s Blog">
+<meta property="og:description" content="原论文：Representation Fréchet Loss for Visual Generation 预备：Fréchet DistanceFréchet Distance（FD）是一种衡量两个概率分布之间差异的指标，常用于评估生成模型生成图像的质量。它通过计算生成图像和真实图像在特征空间中的均值和协方差来衡量两者之间的距离。 令 $\phi(\cdot)$ 表示一个特征提取器。给定真实图像">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.cosmosh.ink/img/avatar.png">
+<meta property="article:published_time" content="2026-05-07T02:03:58.000Z">
+<meta property="article:modified_time" content="2026-05-07T08:34:05.700Z">
+<meta property="article:author" content="Qz">
+<meta property="article:tag" content="Generative Model">
+<meta property="article:tag" content="CV">
+<meta property="article:tag" content="FD loss">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.cosmosh.ink/img/avatar.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "FD-loss:一种新的优化目标",
+  "url": "https://www.cosmosh.ink/2026/05/07/FD-loss-%E4%B8%80%E7%A7%8D%E6%96%B0%E7%9A%84%E4%BC%98%E5%8C%96%E7%9B%AE%E6%A0%87/",
+  "image": "https://www.cosmosh.ink/img/avatar.png",
+  "datePublished": "2026-05-07T02:03:58.000Z",
+  "dateModified": "2026-05-07T08:34:05.700Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "Qz",
+      "url": "https://www.cosmosh.ink/"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://www.cosmosh.ink/2026/05/07/FD-loss-%E4%B8%80%E7%A7%8D%E6%96%B0%E7%9A%84%E4%BC%98%E5%8C%96%E7%9B%AE%E6%A0%87/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":200,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'FD-loss:一种新的优化目标',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 7.3.0"></head><body><div id="web_bg" style="background-image: url(/img/bg.png);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/avatar.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">30</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">38</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">30</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div><div class="menus_item"><a class="site-page" href="/gallery/"><i class="fa-fw fas fa-images"></i><span> 相册</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-rocket"></i><span> 资源</span></a></div><div class="menus_item"><a class="site-page" href="/life/"><i class="fa-fw fas fa-dna"></i><span> 游戏</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/img/arc-bg.jpg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">Qz's Blog</span></a><a class="nav-page-title" href="/"><span class="site-name">FD-loss:一种新的优化目标</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div><div class="menus_item"><a class="site-page" href="/gallery/"><i class="fa-fw fas fa-images"></i><span> 相册</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-rocket"></i><span> 资源</span></a></div><div class="menus_item"><a class="site-page" href="/life/"><i class="fa-fw fas fa-dna"></i><span> 游戏</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">FD-loss:一种新的优化目标</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-05-07T02:03:58.000Z" title="发表于 2026-05-07 10:03:58">2026-05-07</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-05-07T08:34:05.700Z" title="更新于 2026-05-07 16:34:05">2026-05-07</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/">技术</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/AI/">AI</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/AI/CV/">CV</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/AI/CV/Generative-Model/">Generative Model</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/AI/CV/Generative-Model/loss/">loss</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><p>原论文：<a target="_blank" rel="noopener" href="https://arxiv.org/abs/2604.28190">Representation Fréchet Loss for Visual Generation</a></p>
+<h1 id="预备：Frechet-Distance"><a href="#预备：Frechet-Distance" class="headerlink" title="预备：Fréchet Distance"></a>预备：Fréchet Distance</h1><p>Fréchet Distance（FD）是一种衡量两个概率分布之间差异的指标，常用于评估生成模型生成图像的质量。它通过计算生成图像和真实图像在特征空间中的均值和协方差来衡量两者之间的距离。</p>
+<p>令 $\phi(\cdot)$ 表示一个特征提取器。给定真实图像 $\mathcal{R}={\mathbf{x}_i}$ 和生成图像 $\mathcal{G}={\hat{\mathbf{x}}_i}$，它们的特征分布被建模为具有均值和协方差的多元高斯：</p>
+<script type="math/tex; mode=display">
+  \boldsymbol{\mu}_r = \mathbb{E}[\phi(\mathbf{x})], \quad
+  \boldsymbol{\Sigma}_r = \mathrm{Cov}[\phi(\mathbf{x})],
+  \qquad
+  \boldsymbol{\mu}_g = \mathbb{E}[\phi(\hat{\mathbf{x}})], \quad
+  \boldsymbol{\Sigma}_g = \mathrm{Cov}[\phi(\hat{\mathbf{x}})].</script><p>两个高斯分布之间的 FD 为：</p>
+<script type="math/tex; mode=display">
+\mathrm{FD}_{\phi}(\mathcal{R}, \mathcal{G})
+  =
+  \|\boldsymbol{\mu}_r - \boldsymbol{\mu}_g\|_2^2
+  +
+  \mathrm{Tr}\!\Big(
+  \boldsymbol{\Sigma}_r + \boldsymbol{\Sigma}_g
+  - 2(\boldsymbol{\Sigma}_r \boldsymbol{\Sigma}_g)^{\frac{1}{2}}
+  \Big).</script><p>当 $\phi$ 是 Inception-v3 时，这就成为 Fréchet Inception Distance（FID）。</p>
+<p>在标准评估中，$(\boldsymbol{\mu}_r, \boldsymbol{\Sigma}_r)$ 从训练集预先计算一次，而 $(\boldsymbol{\mu}_g, \boldsymbol{\Sigma}_g)$ 从大的生成样本总体中估计，通常为数万量级。</p>
+<p>通过FD的计算，我们可以得到几个结论：</p>
+<ol>
+<li>FD是一个数据分布指标（distributional quantity），而不是数据本身的指标，无法从单个样本出发计算FD。FD的计算依赖于大数定律，只有提供足够多的样本（上万级别）时，FD才能较为准确的衡量整个分布的性质。</li>
+<li>FD本质上是通过特征提取器$\phi$（一般是一个神经网络）将图像映射到一个特征空间，在该空间中计算模型生成数据与真实验证数据的差异程度。这个特征空间以及特征映射的过程，与对应的表征模型$\phi$是强相关的，如果表征模型不能很好的贴合我们的某种要求，那么在这一标准下得到的“最佳”模型也很有可能实际上是质量很差的。</li>
+</ol>
+<h1 id="引入"><a href="#引入" class="headerlink" title="引入"></a>引入</h1><p>长期以来，诸如 Fréchet Distance 的分布距离只作为生成器生成图像质量的评估指标，而不是直接优化的目标函数。我们使用样本级的指标，如MSE/perceptual loss，来训练生成器，训练完毕后，再使用分布级的指标，如FD，来评估生成器的性能。这种训练-评估分离的方式存在一个问题：我们优化的目标函数与我们最终评估生成器性能的指标之间存在不一致性。这种不一致性可能导致我们训练出的生成器在评估指标上表现不佳，即使它在训练过程中表现良好。换句话说，如果我们有一个能够很好表达图像分布的“真实程度”的特征空间，那么我们能不能直接在这个特征空间中优化生成器呢？</p>
+<h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>从原理上讲，FD是完全适用于模型的训练损失的：FD没有离散性操作，是完全可微的（原文“This separation has been a matter of practicality rather than principle: FD has always been differentiable, yet reliable estimation requires populations far beyond a training batch.”）。</p>
+<p>将FD用于训练的问题在于，如果想要较为准确的评估生成器的FD，我们需要大量的样本（上万级别），而在训练过程中，由于硬件和时间的限制，我们通常只能使用较小的批次（几十到几百）；而如果我们使用与batch大小相同的样本数量来计算FD，那么由于样本过少，我们得到的FD值将会非常不稳定（方差非常大），无法有效地衡量生成器的生成效果，从而误导生成器的训练（“Our experiments confirm that optimizing batch-wise FD degrades base generators”）。</p>
+<p>既然计算FD需要大样本量，而参与训练（BP）又需要小样本量，那么Representation Fréchet Loss for Visual Generation这篇文章提出的想法其实很自然：将用于 FD 估计的 总体规模（例如 50k）与用于梯度计算的 批大小（例如 1024）解耦，从而得到一个新的训练优化目标：FD-loss。</p>
+<h1 id="FD-loss的实现"><a href="#FD-loss的实现" class="headerlink" title="FD-loss的实现"></a>FD-loss的实现</h1><p>FD-loss的解耦思想很简单：在大的样本窗口上计算FD，但只在当前batch的样本上计算梯度并反向传播。具体来说，文章给出了两种实现：基于队列的评估器和基于EMA的评估器。</p>
+<h2 id="基于队列的评估器"><a href="#基于队列的评估器" class="headerlink" title="基于队列的评估器"></a>基于队列的评估器</h2><p>基于队列的实现维护了一个固定大小的样本队列，该队列长度为N，其中N&gt;&gt;batch_size。每次训练迭代时，生成器每生成一个batch的样本数据，就先用表征模型$\phi$提取这些样本的特征，并将这些特征加入到队列中，同时移除队列中最旧的batch个样本的特征。这样，队列中始终保持着最近N个样本的特征表示。FD 使用完整队列中全部样本的均值和协方差计算。在反向传播期间，只有当前批次特征携带梯度；来自先前迭代的队列中特征被视为常数。</p>
+<h2 id="基于EMA的评估器"><a href="#基于EMA的评估器" class="headerlink" title="基于EMA的评估器"></a>基于EMA的评估器</h2><p>基于EMA的评估器可以完全避免存储特征队列。这里我们维护特征一阶矩和二阶矩的指数移动平均（EMA）。令 $\beta \in (0, 1)$ 表示 EMA 衰减率，并令 $\boldsymbol{\mu}^{(t)}_{\mathrm{g}}$ 和 $\mathbf{M}^{(t)}_{\mathrm{g}}$ 表示迭代 $t$ 时一阶矩和二阶矩的运行估计。给定当前批次中生成图像的特征 ${\phi(\hat{\mathbf{x}}_i)}_{i=1}^{B}$，我们将批次矩定义为：</p>
+<script type="math/tex; mode=display">
+    \boldsymbol{\mu}^{(t)}_{\mathrm{batch}}
+    = \frac{1}{B}\sum_{i=1}^{B} \phi(\hat{\mathbf{x}}_i),
+    \qquad
+    \mathbf{M}^{(t)}_{\mathrm{batch}}
+    = \frac{1}{B}\sum_{i=1}^{B} \phi(\hat{\mathbf{x}}_i)\,\phi(\hat{\mathbf{x}}_i)^{\top},</script><p>并将运行估计更新为：</p>
+<script type="math/tex; mode=display">
+  \boldsymbol{\mu}^{(t)}_{g}
+  =
+  \beta \boldsymbol{\mu}^{(t-1)}_{g}
+  +
+  (1-\beta)\boldsymbol{\mu}^{(t)}_{\mathrm{batch}},
+  \qquad
+  \mathbf{M}^{(t)}_{g}
+  =
+  \beta \mathbf{M}^{(t-1)}_{g}
+  +
+  (1-\beta)\mathbf{M}^{(t)}_{\mathrm{batch}},</script><p>从下式得到协方差：</p>
+<script type="math/tex; mode=display">
+  \boldsymbol{\Sigma}^{(t)}_{g}
+  =
+  \mathbf{M}^{(t)}_{g}
+  -
+  \boldsymbol{\mu}^{(t)}_{g}
+  \boldsymbol{\mu}^{(t)\top}_{g}.</script><p>然后使用 $(\boldsymbol{\mu}^{(t)}_{g},\, \boldsymbol{\Sigma}^{(t)}_{g})$ 计算 FD，梯度只通过当前批次反向传播。</p>
+<p>EMA实现相比队列实现的优点在于，它不用维护一个巨大的特征队列，因此在多个表征模型或大规模模型上更具可扩展性。</p>
+<p>关于“仅在当前batch上计算梯度”，主要是通过<code>detach()</code>实现，代码为:<br><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"># G: 生成器</span><br><span class="line"># phi: 冻结的表征模型</span><br><span class="line"># (mu_r, sig_r): 真实特征统计量</span><br><span class="line"># (mu_ema, M_ema): EMA 均值和二阶矩</span><br><span class="line"># beta: EMA 衰减</span><br><span class="line"># z: 当前批次噪声</span><br><span class="line"></span><br><span class="line">x = G(z)</span><br><span class="line">feat = phi(x)</span><br><span class="line">feat = all_gather(feat) # 跨设备收集</span><br><span class="line"></span><br><span class="line"># 队列版本：</span><br><span class="line"># gen_feats = cat([queue.detach(), feat])</span><br><span class="line"># mu_g, sig_g = compute_stats(gen_feats)</span><br><span class="line"></span><br><span class="line"># EMA 版本：</span><br><span class="line">mu_b, M_b = batch_moments(feat)</span><br><span class="line">mu_g = beta * mu_ema.detach() + (1 - beta) * mu_b</span><br><span class="line">M_g  = beta * M_ema.detach()  + (1 - beta) * M_b</span><br><span class="line">sig_g = M_g - mu_g @ mu_g.T</span><br><span class="line"></span><br><span class="line">loss = FD((mu_g, sig_g), (mu_r, sig_r))</span><br><span class="line">loss.backward()</span><br><span class="line">optimizer.step()</span><br><span class="line"></span><br><span class="line"># 队列版本：</span><br><span class="line"># queue.enqueue_and_dequeue(feat.detach())</span><br><span class="line"></span><br><span class="line"># EMA 版本</span><br><span class="line">mu_ema = mu_g.detach()</span><br><span class="line">M_ema  = M_g.detach()</span><br></pre></td></tr></table></figure></p>
+<h2 id="个人的几点理解：关于FD-loss的两重近似及其合理性"><a href="#个人的几点理解：关于FD-loss的两重近似及其合理性" class="headerlink" title="个人的几点理解：关于FD-loss的两重近似及其合理性"></a>个人的几点理解：关于FD-loss的两重近似及其合理性</h2><p>个人认为，FD-loss实际上对FD做了两种近似：生成器FD的近似和FD梯度的近似。</p>
+<h3 id="FD梯度的近似"><a href="#FD梯度的近似" class="headerlink" title="FD梯度的近似"></a>FD梯度的近似</h3><p>理想情况下，我们要么使用全量样本计算FD，然后在全量样本上BP；要么仅在batch上计算FD，然后在batch上BP。也就是说，loss（FD）的计算和反向传播的作用范围是一致的，这样可以确保参数始终往FD的最速下降方向更新（取决于优化器的实际处理）。但这里使用了“全量loss（FD）+局部BP（batch）”的方式，这就导致了我们实际上是在用全部N个样本中的Batch_size个样本的梯度方向来近似全部样本的梯度方向。这就类似于从全部N个梯度中采样了batch_size个梯度来近似全部N个梯度的期望(这里的FD是多元素耦合的，因此不是严格意义上的采样操作，此外该“采样”也不是无偏的，但可以通过学习率调整来抵消这一点)。这样做的合理性，个人认为有两个保证：一是我们相信真实数据是服从某种低维规律的（流形假设），因此这batch_size个梯度与能够最小化FD的“全量梯度”大体上方向一致，其方差不至于大到破坏我们的优化过程；二是我们通过多轮迭代，采集了很多批batch_size的样本，这相当于增加了采样的个数，提高了近似的精度。</p>
+<h3 id="生成器FD的近似"><a href="#生成器FD的近似" class="headerlink" title="生成器FD的近似"></a>生成器FD的近似</h3><p>文中强调，队列实现和EMA实现都是on-policy的，实际上这里也应该是“近似on-policy”。理论上讲，我们想要得到当前参数状态下生成器的FD，应该全部使用当前参数状态下生成的样本（对于队列实现来说，需要完整生成N个样本）来计算FD；但实际上，我们是使用“最近的N/batch_size个参数状态所产生的N个样本”/“最近的参数状态的EMA指标”来计算FD的，也就是说，计算出来的FD只是当前生成器的真实FD的一个近似，但是，由于选取的是最近的N个样本（queue），EMA对近期指标的偏好（EMA），这个近似是较为准确的。此外，由于queue是不具备EMA的“近期偏好”特性的，因此使用queue实现的版本表现就比使用EMA的差一点，这也是合理的。</p>
+<p>在实践中，会先用N个样本填满queue或EMA，以进行warm start。</p>
+<p><img src="/img/fdloss1.png" alt="alt text"></p>
+<h2 id="多表征-FD-loss"><a href="#多表征-FD-loss" class="headerlink" title="多表征 FD-loss"></a>多表征 FD-loss</h2><p>有了可训练优化的FD-loss，我们就可以考虑将不同表征模型的FD-loss进行加权组合，得到一个多表征 FD-loss。这样做的好处在于，不同的表征模型可能会捕捉到图像分布的不同方面，因此通过组合多个表征模型的FD-loss，我们可以得到一个更全面、更鲁棒的优化目标，从而提升生成器的性能。</p>
+<p>由于不同FD-loss的数值尺度不同，因此相加之前先进行normalization操作:</p>
+<script type="math/tex; mode=display">
+\mathcal{L}
+  =
+  {\textstyle\sum_i} w_i \cdot \mathcal{L}_{\phi_i},
+  \qquad
+  \mathcal{L}_{\phi_{i}}
+  =
+  \frac{\mathrm{FD}_{\phi_i}(\mathcal{R},\, \mathcal{G})}
+  {\texttt{sg}\!\left(\mathrm{FD}_{\phi_i}(\mathcal{R},\, \mathcal{G})\right) + c},</script><p>分母上的stop-gradient表示将FD-loss除以大小为其自身的常数，因此该loss项在数值上大约为1.</p>
+<h1 id="一种新的评估指标"><a href="#一种新的评估指标" class="headerlink" title="一种新的评估指标"></a>一种新的评估指标</h1><p>作者发现，FID相当低的生成器可能实际上具有相当糟糕的生成效果，因此FID并不能完全反映生成器的质量。为了解决这个问题，作者提出FD ratio,用同一特征空间中真实验证图像的 FD 对生成图像的 FD 进行归一化。令 $\mathcal{T}$ 表示 ImageNet 训练集，$\mathcal{V}$ 表示验证集，$\mathcal{G}$ 表示一组生成图像。对于表征模型 $\phi_i$，我们定义<em>归一化 FD 比率</em>，缩写为 $\mathrm{FDr}$：</p>
+<script type="math/tex; mode=display">
+  \mathrm{FDr}_{\phi_i}(\mathcal{G})
+  =
+  \frac{\mathrm{FD}_{\phi_i}(\mathcal{G}, \mathcal{T})}
+  {\mathrm{FD}_{\phi_i}(\mathcal{V}, \mathcal{T})}.</script><p>这一比率是无单位的，并且可解释为生成图像与验证图像的感知距离的比例。FDr的值越接近1，说明生成图像与验证图像在特征空间中的分布越接近验证图像的分布，从而表明生成器的性能越好。</p>
+<p>这引出了$\mathrm{FDr}^{K}$。 通过在 $K$ 个表征模型上平均这些归一化比率来定义 $\mathrm{FDr}^{k}$：</p>
+<script type="math/tex; mode=display">
+    \mathrm{FDr}^{K}(\mathcal{G})
+    =
+    \frac{1}{K}\sum_{i=1}^{K} \mathrm{FDr}_{\phi_i}(\mathcal{G}).
+    \tag{4}</script><p>这是一个单一的多表征指标，同时保留了逐模型比率的解释。即使在 Inception 特征空间中超过验证图像，但一旦跨多样表征评估，仍然可能显著劣于验证图像。</p>
+<p>作者使用 6 个代表性模型实例化 $\mathrm{FDr}^{k}$，它们跨越有监督、自监督和视觉-语言目标，并覆盖 CNN 与 ViT 架构：Inception-v3 、ConvNeXt-v2 、DINOv2 、MAE 、SigLIP2  和 CLIP 。$\mathrm{FDr}^{6}$提供了比单一表征更全面的自动评估指标，能够更好地反映生成图像的质量。</p>
+<h1 id="实验及其效果"><a href="#实验及其效果" class="headerlink" title="实验及其效果"></a>实验及其效果</h1><p>简单列举一下实验结论：</p>
+<ol>
+<li>queue过大/beta过大会导致信息过于陈旧，接近off-policy，导致性能下降；过小则会导致信息过于嘈杂，导致性能下降。适中的queue size/beta比较理想。</li>
+<li>用FD-loss后训练一步生成器，在FID和$\mathrm{FDr}^{6}$上都能得到显著提升。</li>
+<li>FD-loss也可以将多步生成器后训练为有效的单步生成器。具体而言，给定高斯噪声 $z$，我们只在终止时间步运行模型一次，并将其输出解释为干净图像的一步预测。例如，对于 velocity-prediction 模型，$\hat{x}_0 = z - v_\theta(z,\; t{=}1)$；对于 $x_0$-prediction 模型，$\hat{x}_0 = x_\theta(z,\; t{=}1)$，假设 $z_{t=1}$ 是纯高斯噪声。</li>
+<li>FID很低的模型，在$\mathrm{FDr}^{6}$上可能表现很差，视觉上也失真严重，说明FID并不能完全反映生成器的质量。使用多个表征模型后训练出的模型可以得到较低的FID和较低的$\mathrm{FDr}^{6}$，并且在视觉上质量也很好。其中FD-SIM效果最好，即FD-SigLIP+Incep.+MAE。基于 CNN 的表征倾向于改进 FID，而基于 ViT 的表征更大幅度地改进更广泛的 $\mathrm{FDr}^{6}$。</li>
+<li>FD-loss扩展性良好：它可以与单步生成/多步生成，latent space/pixel space，有条件/无条件输入模型相结合。</li>
+</ol>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>FD-loss解决了分布指标难以用于模型训练的问题。它证明：一旦总体规模和梯度规模被解耦，分布距离就可以直接作为训练损失。这一工作具有很强的泛用价值，并不局限于图像生成，它将分布级目标引入了模型的训练过程，引导人们转向关注更好的表征空间的选择和表征的多样性真实性。目前，FD-loss仅仅作为后训练的目标，对于如何在从头训练模型的过程中引入分布级指标，还有待探索和实现。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://www.cosmosh.ink">Qz</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://www.cosmosh.ink/2026/05/07/FD-loss-%E4%B8%80%E7%A7%8D%E6%96%B0%E7%9A%84%E4%BC%98%E5%8C%96%E7%9B%AE%E6%A0%87/">https://www.cosmosh.ink/2026/05/07/FD-loss-%E4%B8%80%E7%A7%8D%E6%96%B0%E7%9A%84%E4%BC%98%E5%8C%96%E7%9B%AE%E6%A0%87/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://www.cosmosh.ink" target="_blank">Qz's Blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Generative-Model/">Generative Model</a><a class="post-meta__tags" href="/tags/CV/">CV</a><a class="post-meta__tags" href="/tags/FD-loss/">FD loss</a></div><div class="post-share"><div class="social-share" data-image="/img/avatar.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/05/04/Mean-Flow/" title="Mean Flow"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">Mean Flow</div></div><div class="info-2"><div class="info-item-1">参考：https://zhuanlan.zhihu.com/p/1908857108243407231      https://www.zhihu.com/question/1982041752169910918/answer/1982042548311700867 原论文：https://arxiv.org/abs/2512.02012 Mean Flow简述Mean Flow的核心思路在于，它不再像flow matching那样通过让模型预测条件瞬时速度的期望从而预测边缘瞬时速度v，而是通过让模型学习预测边缘平均速度u。 通过推导，得到以下边缘平均速度的表达式MeanFlow 恒等式（MeanFlow Identity）：  u(z_t, r, t) = v(z_t, t) - (t-r) \frac{d}{dt} u(z_t, r, t)...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/04/22/DDIM/" title="DDIM"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-04-22</div><div class="info-item-2">DDIM</div></div><div class="info-2"><div class="info-item-1">参考：https://zhuanlan.zhihu.com/p/614147698      https://zhuanlan.zhihu.com/p/565698027     ...</div></div></div></a><a class="pagination-related" href="/2026/03/12/DDPM%E7%9A%84%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3/" title="DDPM的核心思想"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-12</div><div class="info-item-2">DDPM的核心思想</div></div><div class="info-2"><div class="info-item-1">本文旨在用最简短的篇幅，描述DDPM的核心思想与设计动机，仅作为日后回顾DDPM的一个记忆锚点，具体公式和代码请参考其它资料。本文尽可能省略一切数学推导，跳略的推导会标注出来。 参考：https://zhuanlan.zhihu.com/p/650394311      https://lilianweng.github.io/posts/2021-07-11-diffusion-models/ 生成模型的目标，就是从一张随机图像（如纯噪声）开始，生成一张“真实”的图像，这里的“真实”是指生成的图像符合实际图像的概率分布（例如，一个人拥有黄色或白色皮肤的概率是比较大的，但是拥有蓝色皮肤却是几乎不可能的）。尽管现在大多数生成模型都支持根据输入的文字生成对应内容的图片，但那也只是通过在模型的每个模块加上文字的特征表示而训练得到的，对模型的整体结构影响不大，因此本文主要介绍DDPM从噪声生图的核心思想。 DDPM（以及所有生成式模型）的优化目标是让模型产生的图片分布和真实图片分布尽量相似，那么就有了以下推导过程：  为了使模型产生的图片分布和真实图片分布尽可能相似，我们要求...</div></div></div></a><a class="pagination-related" href="/2026/03/15/Diffusion-Transformer/" title="Diffusion Transformer"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-15</div><div class="info-item-2">Diffusion Transformer</div></div><div class="info-2"><div class="info-item-1">原论文：https://arxiv.org/abs/2212.09748 参考：建议先看https://zhuanlan.zhihu.com/p/683657190      再看https://zhuanlan.zhihu.com/p/684125968， 会对DiT有一个相当透彻的理解  以下为Gemini概括的我在学习DiT过程中的对话内容,内容覆盖较为片面，仅供参考：  1. 核心架构：从 DDPM 到 DiTDiT 并不是脱离传统扩散模型的全新物种，而是对现有框架的“换擎升级”。  骨干网络替换：DiT 将传统 DDPM（去噪扩散概率模型）中基于 CNN 的 U-Net 替换成了 Vision Transformer (ViT)。 潜在扩散模型 (LDM)：DiT 并不直接在原始像素空间生成图像，而是运行在由 VAE（变分自编码器）压缩后的 潜在空间 (Latent Space) 中。 VAE 的双重角色： 训练阶段（不可或缺）：使用基于 CNN 的 VAE 编码器，将高分辨率图像压缩为低维潜在表示（建立潜在空间的数学分布），大幅降低 Transformer...</div></div></div></a><a class="pagination-related" href="/2026/04/23/Flow-matching-%E4%B8%8E-Rectified-flow/" title="Flow matching 与 Rectified flow"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-04-23</div><div class="info-item-2">Flow matching 与 Rectified flow</div></div><div class="info-2"><div class="info-item-1">参考：FM:先看文章一再看文章二 Rectified flow:原作者的博文另一篇对Rectified flow的解读，个人认为视角非常高，暂时没完全理解 论文：Flow Matching for Generative Modeling      Flow Straight and Fast: Learning to Generate and Transfer Data with Rectified Flow  Occam’s razor:Entities must not be multiplied beyond necessity  前言我们知道，图像生成模型的根本目的在于找到一个从先验分布到数据分布到映射。在现实世界中，我们只有真实数据和纯噪声，而看不到从噪声到数据的中间过渡过程，那么，我们的模型就需要建模这个过程，使得在这样的过程假设下（注意，这里说的是“假设”，因为根本不存在一个“客观正确”的转换过程），模型能够产生一个与数据分布尽可能接近的分布。Flow...</div></div></div></a><a class="pagination-related" href="/2026/03/16/Just-image-Transformer/" title="Just image Transformer"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-16</div><div class="info-item-2">Just image Transformer</div></div><div class="info-2"><div class="info-item-1">原论文：https://www.alphaxiv.org/abs/2511.13720参考：https://zhuanlan.zhihu.com/p/1977479109690032906      https://zhuanlan.zhihu.com/p/1974626511182124468 1.扩散模型的发展历史在生成式模型领域，如GAN相比，扩散模型（如DDPM）一直被诟病的一个问题就是它的计算效率较低，因为像DDPM这样的模型的增噪，采样，去噪过程全部都是在原始图像的像素空间（pixel space）中进行的，除非图片的分辨率非常小（如16x16x3），否则该pixel space的维度是非常高的，导致模型的计算量和内存占用都非常大。ADM对DDPM进行了改进，但与GAN相比，效率依然差得很远。为了提升模型效率，Latent Diffusion Model（LDM）架构被提出，该架构包含一个VAE编码器，用于将图片从pixel space映射到一个低维的latent space中；一个针对latent...</div></div></div></a><a class="pagination-related" href="/2026/05/04/Mean-Flow/" title="Mean Flow"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-04</div><div class="info-item-2">Mean Flow</div></div><div class="info-2"><div class="info-item-1">参考：https://zhuanlan.zhihu.com/p/1908857108243407231      https://www.zhihu.com/question/1982041752169910918/answer/1982042548311700867 原论文：https://arxiv.org/abs/2512.02012 Mean Flow简述Mean Flow的核心思路在于，它不再像flow matching那样通过让模型预测条件瞬时速度的期望从而预测边缘瞬时速度v，而是通过让模型学习预测边缘平均速度u。 通过推导，得到以下边缘平均速度的表达式MeanFlow 恒等式（MeanFlow Identity）：  u(z_t, r, t) = v(z_t, t) - (t-r) \frac{d}{dt} u(z_t, r, t)...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/avatar.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Qz</div><div class="author-info-description">Жизнь полюбить больше, чем смысл ее? — Непременно так, полюбить прежде логики...</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">30</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">38</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">30</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/Qz06"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/Qz06" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="/2791144859@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%A2%84%E5%A4%87%EF%BC%9AFrechet-Distance"><span class="toc-number">1.</span> <span class="toc-text">预备：Fréchet Distance</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%BC%95%E5%85%A5"><span class="toc-number">2.</span> <span class="toc-text">引入</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%97%AE%E9%A2%98"><span class="toc-number">3.</span> <span class="toc-text">问题</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#FD-loss%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="toc-number">4.</span> <span class="toc-text">FD-loss的实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9F%BA%E4%BA%8E%E9%98%9F%E5%88%97%E7%9A%84%E8%AF%84%E4%BC%B0%E5%99%A8"><span class="toc-number">4.1.</span> <span class="toc-text">基于队列的评估器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9F%BA%E4%BA%8EEMA%E7%9A%84%E8%AF%84%E4%BC%B0%E5%99%A8"><span class="toc-number">4.2.</span> <span class="toc-text">基于EMA的评估器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%AA%E4%BA%BA%E7%9A%84%E5%87%A0%E7%82%B9%E7%90%86%E8%A7%A3%EF%BC%9A%E5%85%B3%E4%BA%8EFD-loss%E7%9A%84%E4%B8%A4%E9%87%8D%E8%BF%91%E4%BC%BC%E5%8F%8A%E5%85%B6%E5%90%88%E7%90%86%E6%80%A7"><span class="toc-number">4.3.</span> <span class="toc-text">个人的几点理解：关于FD-loss的两重近似及其合理性</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#FD%E6%A2%AF%E5%BA%A6%E7%9A%84%E8%BF%91%E4%BC%BC"><span class="toc-number">4.3.1.</span> <span class="toc-text">FD梯度的近似</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%94%9F%E6%88%90%E5%99%A8FD%E7%9A%84%E8%BF%91%E4%BC%BC"><span class="toc-number">4.3.2.</span> <span class="toc-text">生成器FD的近似</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A4%9A%E8%A1%A8%E5%BE%81-FD-loss"><span class="toc-number">4.4.</span> <span class="toc-text">多表征 FD-loss</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%80%E7%A7%8D%E6%96%B0%E7%9A%84%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87"><span class="toc-number">5.</span> <span class="toc-text">一种新的评估指标</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%AE%9E%E9%AA%8C%E5%8F%8A%E5%85%B6%E6%95%88%E6%9E%9C"><span class="toc-number">6.</span> <span class="toc-text">实验及其效果</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">7.</span> <span class="toc-text">总结</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/05/07/FD-loss-%E4%B8%80%E7%A7%8D%E6%96%B0%E7%9A%84%E4%BC%98%E5%8C%96%E7%9B%AE%E6%A0%87/" title="FD-loss:一种新的优化目标">FD-loss:一种新的优化目标</a><time datetime="2026-05-07T02:03:58.000Z" title="发表于 2026-05-07 10:03:58">2026-05-07</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/05/04/Mean-Flow/" title="Mean Flow">Mean Flow</a><time datetime="2026-05-04T06:31:26.000Z" title="发表于 2026-05-04 14:31:26">2026-05-04</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/04/28/%E5%87%A0%E7%AF%87%E6%96%87%E7%AB%A0%E7%9A%84takeaway/" title="几篇文章的takeaway">几篇文章的takeaway</a><time datetime="2026-04-28T05:45:22.000Z" title="发表于 2026-04-28 13:45:22">2026-04-28</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/04/25/%E6%80%92%E6%94%BE/" title="怒放">怒放</a><time datetime="2026-04-25T14:54:31.000Z" title="发表于 2026-04-25 22:54:31">2026-04-25</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/04/23/Flow-matching-%E4%B8%8E-Rectified-flow/" title="Flow matching 与 Rectified flow">Flow matching 与 Rectified flow</a><time datetime="2026-04-23T08:47:47.000Z" title="发表于 2026-04-23 16:47:47">2026-04-23</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2019 - 2026 By Qz</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.3.0</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.3.3</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax/es5/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script></div><canvas class="fireworks" mobile="false"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/fireworks.min.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js"></script></div></div><script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":false},"log":false});</script></body></html>
