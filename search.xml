@@ -4,6 +4,43 @@
   
     
     <entry>
+      <title>Drifting Model</title>
+      <link href="/2026/05/16/Drifting-Model/"/>
+      <url>/2026/05/16/Drifting-Model/</url>
+      
+        <content type="html"><![CDATA[<p>原论文：<a href="https://arxiv.org/abs/2602.04770">https://arxiv.org/abs/2602.04770</a></p><p>参考：<a href="https://zhuanlan.zhihu.com/p/2004241203365946177">https://zhuanlan.zhihu.com/p/2004241203365946177</a></p><h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>Drifting Model是今年2月份Kaiming团队提出来的一个比较有趣而且（可能是）范式级的生成式模型方法。核心在于将以往生成式模型（如DDPM，FM等）的多步迭代过程（pushforward）从推理搬到训练，从而使模型在推理时可以直接拿到与数据分布相匹配的模型分布，从而实现一步生成。</p><p>Drifting Model通过训练时多轮迭代，将模型的pushforward分布逐渐逼近数据分布，我们知道对loss的优化过程实际上就是一个在batch上的迭代过程，所以这里的“训练时迭代”就是指的优化loss。</p><script type="math/tex; mode=display">\begin{equation} \mathbf{x}_{i+1}=\mathbf{x}_i+\mathbf{V}_{p,q_i}(\mathbf{x}_i), \end{equation} \tag{2}</script><p>$V$是漂移场，可看作前后迭代中x的残差，$\mathbf{x}_i=f_i(\boldsymbol{\epsilon}) \sim q_i$,$\mathbf{x}_{i+1}\sim q_{i+1}$。<br>$V$需要满足反对称性，即</p><script type="math/tex; mode=display">\begin{equation} \mathbf{V}_{p,q}(\mathbf{x}) = - \mathbf{V}_{q,p}(\mathbf{x}),\quad \forall \mathbf{x}. \end{equation} \tag{3}</script><p>那么有</p><script type="math/tex; mode=display">q=p \quad \Rightarrow \quad \mathbf{V}_{p,q}(\mathbf{x}) = \mathbf{0},\forall \mathbf{x}</script><p>但反过来不成立，这是这篇工作最大的不完备性。</p><p>迭代过程：</p><script type="math/tex; mode=display">\begin{equation} f_{\theta_{i+1}}(\boldsymbol{\epsilon}) \leftarrow f_{\theta_{i}}(\boldsymbol{\epsilon}) + \mathbf{V}_{p,q_{\theta_{i}}}\!\big(f_{\theta_{i}}(\boldsymbol{\epsilon})\big). \end{equation} \tag{5}</script><p>对应的loss：</p><script type="math/tex; mode=display">\begin{equation} \mathcal{L} = \mathbb{E}_{\boldsymbol{\epsilon}} \Big[ \big\| \underbrace{f_{\theta}(\boldsymbol{\epsilon})}_{\text{prediction}} - \underbrace{ \texttt{stopgrad}\big( f_{\theta}(\boldsymbol{\epsilon}) + \mathbf{V}_{p,q_{\theta}}\!\big(f_{\theta}(\boldsymbol{\epsilon})\big) \big) }_{\text{frozen target}} \big\|^2 \Big]. \end{equation} \tag{6}</script><h1 id="Drifting-Model为什么合理？从不动点方程的迭代求解角度解释"><a href="#Drifting-Model为什么合理？从不动点方程的迭代求解角度解释" class="headerlink" title="Drifting Model为什么合理？从不动点方程的迭代求解角度解释"></a>Drifting Model为什么合理？从不动点方程的迭代求解角度解释</h1><p>笔者第一次看Drifting Model以及相关的技术博客时，总感觉该模型的迭代过程在逻辑上不太通顺，甚至有点“循环论证”的感觉。探索后发现用不动点理论来解释Drifting Model的合理性是非常自然且清晰的，其实原论文也提及过fixed point iteration。这里详细讲讲。</p><p><img src="/img/drift.png" alt="alt text"></p><p>首先，我们看看Drifting Model的迭代过程究竟在做什么：每一次迭代实际上就是对loss的一次优化，这里的loss是:</p><script type="math/tex; mode=display">\begin{equation} \mathcal{L} = \mathbb{E}_{\boldsymbol{\epsilon}} \Big[ \big\| \underbrace{f_{\theta}(\boldsymbol{\epsilon})}_{\text{prediction}} - \underbrace{ \texttt{stopgrad}\big( f_{\theta}(\boldsymbol{\epsilon}) + \mathbf{V}_{p,q_{\theta}}\!\big(f_{\theta}(\boldsymbol{\epsilon})\big) \big) }_{\text{frozen target}} \big\|^2 \Big]. \end{equation} \tag{6}</script><p>也就是说，优化过程实际上是在让当前迭代对应的模型逼近下一轮迭代对应的模型，那么这个优化过程就是对分布迭代的实现，让模型分布在漂移场V的指导下不断发生漂移。漂移场可以看作每一轮迭代的分布的演化方向，这个方向指引模型的分布逐渐演变为数据分布，不难想象，当模型的分布就是数据分布时，分布停止演化，保持静止，也就是这个漂移场V变成0。在这种情况下，迭代不再会改变数据的分布，也就是说这一轮和下一轮迭代中数据的分布是一样的。</p><p>迭代的过程为:</p><script type="math/tex; mode=display">x \mapsto x + V_{p,q}(x).</script><p>即</p><script type="math/tex; mode=display">x' = x + V_{p,q}(x)</script><p>如果</p><script type="math/tex; mode=display">x\sim q,</script><p>那么</p><script type="math/tex; mode=display">q' = T_p(q).</script><p>这里</p><script type="math/tex; mode=display">T_p(q)=(\operatorname{Id}+V_{p,q})_\# q.</script><p>那么Drifting的动力学表达：</p><script type="math/tex; mode=display">q_{k+1} = T_p(q_k).</script><p>这就完全是一个不动点迭代的方程了:</p><script type="math/tex; mode=display">x_{k+1}=F(x_k).</script><p>由于数据分布$p_{data} = q^\star$满足：</p><script type="math/tex; mode=display">q^\star = T_p(q^\star).</script><p>因此我们要找的$q^\star$就是这个方程的一个不动点：</p><script type="math/tex; mode=display">q^\star=(\operatorname{Id}+V_{p,q^\star})_\#q^\star.</script><p>也即</p><script type="math/tex; mode=display">V_{p,q^\star}(x)=0</script><p>这样我们的目标就很简单了，就是找到满足</p><script type="math/tex; mode=display">q_{k+1} = T_p(q_k).</script><p>这一迭代过程的不动点。</p><p>通过数值分析的知识，我们知道，解形如:</p><script type="math/tex; mode=display">x_{k+1}=F(x_k).</script><p>的不动点或方程$x = F(x)$的根的迭代方法，简单来讲就是不断用$F$作用在当前的$x_k$上，得到新的$x_{k+1}$，不断迭代这个过程，直到$x_k$不再发生变化，也就是达到了不动点。从这个角度看，Drifting Model的优化过程其实是完全合理的，它通过优化$p_i$与$p_{i+1}$之间的差异来不断让$p_i$逼近$p_{i+1}$,这实际上就是不断更新$p_i$来逼近一个不动点的过程。也可以说，漂移场V实际上就是前后迭代中分布的残差，不断对分布进行drift就是在最小化这个残差即minimise V，这个残差越小，就越接近不动点。从数值分析的角度看，这里完全可以做更加复杂的迭代处理，包括残差分析，甚至泰勒展开等，但是对于神经网络而言可能太过复杂，因此不做赘述。</p><p>此外，这也可以解释Drifting Model这篇工作的几个重要的不完备性：首先，数据分布p需要是不动点，这个是显然的，因为V必须满足约束条件$q=p \Rightarrow V_{p,q}=0.$；其次，p需要是一个吸引不动点，也就是说这一迭代过程必须是feasible的，即$d(T_p(q),p)&lt;d(q,p).$，这一点是不一定能保证的，论文也没有给出充分证明，仅仅通过 attraction-repulsion 的 mean-shift 直觉来支持：样本被数据分布吸引，被生成分布排斥。论文把这个 field 解释为由 data distribution attraction 和 sample distribution repulsion 构成；最后，这一过程的正确性必须保证没有“坏”不动点的存在，也就是说，除了数据分布之外，不应该存在其他的不动点$q^\star\ne p$，仍然满足$T_p(q^\star)=q^\star$，这一点也是没法保证的，论文也承认，$V=0 \Rightarrow p=q$并不对任意的V成立，但这是一个比较强的约束，可以确保p和q足够接近或生成效果足够好，论文中称作是在“kernelized formulation 下给出 sufficient conditions / identifiability heuristic”。</p><p>总的来说，这篇工作最大的不完备性就在于，缺乏“$p_{data}$是唯一稳定吸引不动点”的理论证明，这也是后续工作可以改进的一个重要方向。</p><h1 id="几点说明"><a href="#几点说明" class="headerlink" title="几点说明"></a>几点说明</h1><ol><li>本文只是对Drifting Model的一个启发性的解读，详细内容请参看原论文。</li><li>实际上这一迭代过程可以简单的理解为“不断优化当前迭代分布与下一迭代分布的差距，最终使得分布在迭代之间保持不变，也就实现了V=0，即找到了数据分布”，这与上面的不动点分析本质上是一样的，但推理省略了一些步骤，因此容易产生“追胡萝卜的马”的循环论证感觉。</li><li>在实际中我们不可能直接拿到数据的分布参与计算，因此还是分别从噪声和数据中采样，然后对噪声pushforward送入loss表达式，从而近似期望。这里不展开推导，详细请看原论文。</li></ol>]]></content>
+      
+      
+      <categories>
+          
+          <category> 技术 </category>
+          
+          <category> AI </category>
+          
+          <category> CV </category>
+          
+          <category> Generative Model </category>
+          
+          <category> loss </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> Generative Model </tag>
+            
+            <tag> CV </tag>
+            
+            <tag> FD loss </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>FD-loss:一种新的优化目标</title>
       <link href="/2026/05/07/FD-loss-%E4%B8%80%E7%A7%8D%E6%96%B0%E7%9A%84%E4%BC%98%E5%8C%96%E7%9B%AE%E6%A0%87/"/>
       <url>/2026/05/07/FD-loss-%E4%B8%80%E7%A7%8D%E6%96%B0%E7%9A%84%E4%BC%98%E5%8C%96%E7%9B%AE%E6%A0%87/</url>
@@ -926,13 +963,13 @@
             
             <tag> PyTorch </tag>
             
+            <tag> 造轮子 </tag>
+            
             <tag> NLP </tag>
             
             <tag> LSTM </tag>
             
             <tag> RNN </tag>
-            
-            <tag> 造轮子 </tag>
             
         </tags>
       
@@ -1006,9 +1043,9 @@
             
             <tag> Transformer </tag>
             
-            <tag> NLP </tag>
-            
             <tag> 造轮子 </tag>
+            
+            <tag> NLP </tag>
             
         </tags>
       
