@@ -4,6 +4,43 @@
   
     
     <entry>
+      <title>近期论文的takeaway</title>
+      <link href="/2026/05/29/%E8%BF%91%E6%9C%9F%E8%AE%BA%E6%96%87%E7%9A%84takeaway/"/>
+      <url>/2026/05/29/%E8%BF%91%E6%9C%9F%E8%AE%BA%E6%96%87%E7%9A%84takeaway/</url>
+      
+        <content type="html"><![CDATA[<h1 id="L2P-UNLOCKING-LATENT-POTENTIAL-FOR-PIXEL-GENERATION"><a href="#L2P-UNLOCKING-LATENT-POTENTIAL-FOR-PIXEL-GENERATION" class="headerlink" title="L2P: UNLOCKING LATENT POTENTIAL FOR PIXEL GENERATION"></a>L2P: UNLOCKING LATENT POTENTIAL FOR PIXEL GENERATION</h1><ol><li>传统LDM的瓶颈很大程度上在于VAE encoder和VAE decoder，VAE参数量大，推理速度慢，且decoder无法重建出细节较好的图像。直接训练一个pixel space的模型可以解决这些问题，但是pixel space对GPU和数据的要求很高。能不能利用LDM模型的diffusion组件中的先验知识，训练一个pixel space的模型呢？L2P就是这么做的。</li><li>L2P直接使用LDM的DiT，从而能够有效使用DiT权重中的大量先验知识。它去掉了VAE encoder和decoder，通过增加patch的大小，使得latent space中的DiT能直接用于pixel space。使用一个轻量的U-net decoder接在DiT最后作为像素生成器。训练时直接在像素空间计算v-loss，冻结 DiT backbone 的中间层，并只训练浅层输⼊和输出层（初始输⼊投影层、DiT 的前n个和后n个 blocks，以及新添加的 Detailer Head）来学习latent-to-pixel 模态转换。训练时无需重新收集数据集，只要把原LDM的输出作为L2P的label即可。此外，这种方法天然适配高分辨率生成，通过进一步增大patch size，L2P可以直接生成4K图像。</li><li>与VAE decoder相比，L2P在推理时间和显存占用上都有显著优势。</li></ol><h1 id="PiD-Fast-and-High-Resolution-Latent-Decoding-with-Pixel-Diffusion"><a href="#PiD-Fast-and-High-Resolution-Latent-Decoding-with-Pixel-Diffusion" class="headerlink" title="PiD: Fast and High-Resolution Latent Decoding with Pixel Diffusion"></a>PiD: Fast and High-Resolution Latent Decoding with Pixel Diffusion</h1><ol><li>传统高分辨率图像生成方法通常采用两阶段pipeline，即先通过VAE decoder从diffusion模型输出的latent space生成一个低分辨率图像，然后再通过一个超分模型将其放大到目标分辨率。而VAE decoder的目标是重建encoder的输入图像而不是合成更多细节，因此它会丢失一些细节信息，导致生成的图像质量不佳。此外，VAE还具有推理速度慢，显存占用大等问题。PiD通过一个latent-conditioned pixel diffusion decoder直接建立latent representation到high-resolution pixel space的映射，将latent decoding过程建模为conditional pixel-space generation，在单个扩散解码阶段中统一解码和高分辨率上采样，避免了VAE decoder的问题，实现更小的显存占用和更快的生成。此外，这个decoder可以在带噪声的latent下生成，而不要求输入一个干净的latent，这样就可以减少latent diffusion的步数，从而加速推理。</li><li>如图，上面的绿色方块表示latent diffusion输出的latent representation，这个latent是可以带噪声的，也就是允许latent diffusion的早停，在训练时也会刻意向latent中插值进噪声。然后该latent被resize至pixel space diffusion的patch大小，再经过一个简单的编码器变为token，线性投影到pixel diffusion decoder的隐藏维度，最后通过一个门控融入到pixel diffusion decoder的每个block中作为条件输入，一般是通过concat到每个token的通道维或直接相加（文章中是直接相加），这个门控简单来讲就是实现latent的噪声水平越大，其“可信度”就越低，condition注入强度越弱。下面是一个训练好的T2I pixel-diffusion model作为decoder，可以是PixelDiT等模型，然后通过这种latent-conditioned来微调，仍然使用v-loss。下面这个pixel diffusion还可以通过dmd2蒸馏以进一步加速生成。</li><li>简单来讲，PiD就是把VAE decoder换成了一个pixel-space diffusion decoder，原来的latent-diffusion的输出作为pixel-diffusion的condition，用以提供全局结构信息和语义约束，而pixel-diffusion则通过其先验知识更好的生成细节和纹理，从而提升生成图像的质量。<br><img src="/img/pid1.png" alt="alt text"></li></ol>]]></content>
+      
+      
+      <categories>
+          
+          <category> 技术 </category>
+          
+          <category> AI </category>
+          
+          <category> CV </category>
+          
+          <category> Generative Model </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> Generative Model </tag>
+            
+            <tag> CV </tag>
+            
+            <tag> SR </tag>
+            
+            <tag> AIGC </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>Drifting Model</title>
       <link href="/2026/05/16/Drifting-Model/"/>
       <url>/2026/05/16/Drifting-Model/</url>
@@ -620,9 +657,9 @@
             
             <tag> CV </tag>
             
-            <tag> PyTorch </tag>
-            
             <tag> Diffusion Model </tag>
+            
+            <tag> PyTorch </tag>
             
         </tags>
       
@@ -659,9 +696,9 @@
             
             <tag> CV </tag>
             
-            <tag> PyTorch </tag>
-            
             <tag> Diffusion Model </tag>
+            
+            <tag> PyTorch </tag>
             
         </tags>
       
