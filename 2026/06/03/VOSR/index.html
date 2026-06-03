@@ -1,0 +1,243 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>VOSR -- A Vision-Only Generative Model for Image Super-Resolution | Qz's Blog</title><meta name="author" content="Qz"><meta name="copyright" content="Qz"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="原论文：https:&#x2F;&#x2F;arxiv.org&#x2F;pdf&#x2F;2604.03225 这篇工作是CVPR 2026的文章之一，提出的实现和结构不算太复杂，但是个人认为作者在这篇文章中对SR任务的本质及其与生成任务的区别分析的非常透彻，也与笔者的部分观念不谋而合。非常推荐仔细阅读一下原论文，相信能让你对SR有更深的理解。 引言目前SOTA的SR模型，基本上都是从 generic T2I generator 出发">
+<meta property="og:type" content="article">
+<meta property="og:title" content="VOSR -- A Vision-Only Generative Model for Image Super-Resolution">
+<meta property="og:url" content="https://www.cosmosh.ink/2026/06/03/VOSR/index.html">
+<meta property="og:site_name" content="Qz&#39;s Blog">
+<meta property="og:description" content="原论文：https:&#x2F;&#x2F;arxiv.org&#x2F;pdf&#x2F;2604.03225 这篇工作是CVPR 2026的文章之一，提出的实现和结构不算太复杂，但是个人认为作者在这篇文章中对SR任务的本质及其与生成任务的区别分析的非常透彻，也与笔者的部分观念不谋而合。非常推荐仔细阅读一下原论文，相信能让你对SR有更深的理解。 引言目前SOTA的SR模型，基本上都是从 generic T2I generator 出发">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.cosmosh.ink/img/avatar.png">
+<meta property="article:published_time" content="2026-06-03T07:59:04.000Z">
+<meta property="article:modified_time" content="2026-06-03T10:39:41.108Z">
+<meta property="article:author" content="Qz">
+<meta property="article:tag" content="CV">
+<meta property="article:tag" content="SR">
+<meta property="article:tag" content="VOSR">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.cosmosh.ink/img/avatar.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "VOSR -- A Vision-Only Generative Model for Image Super-Resolution",
+  "url": "https://www.cosmosh.ink/2026/06/03/VOSR/",
+  "image": "https://www.cosmosh.ink/img/avatar.png",
+  "datePublished": "2026-06-03T07:59:04.000Z",
+  "dateModified": "2026-06-03T10:39:41.108Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "Qz",
+      "url": "https://www.cosmosh.ink/"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://www.cosmosh.ink/2026/06/03/VOSR/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":200,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'VOSR -- A Vision-Only Generative Model for Image Super-Resolution',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><script defer src="/_vercel/insights/script.js"></script><meta name="generator" content="Hexo 7.3.0"></head><body><div id="web_bg" style="background-image: url(/img/bg.png);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/avatar.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">33</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">41</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">31</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div><div class="menus_item"><a class="site-page" href="/gallery/"><i class="fa-fw fas fa-images"></i><span> 相册</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-rocket"></i><span> 资源</span></a></div><div class="menus_item"><a class="site-page" href="/life/"><i class="fa-fw fas fa-dna"></i><span> 游戏</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/img/arc-bg.jpg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">Qz's Blog</span></a><a class="nav-page-title" href="/"><span class="site-name">VOSR -- A Vision-Only Generative Model for Image Super-Resolution</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div><div class="menus_item"><a class="site-page" href="/gallery/"><i class="fa-fw fas fa-images"></i><span> 相册</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-rocket"></i><span> 资源</span></a></div><div class="menus_item"><a class="site-page" href="/life/"><i class="fa-fw fas fa-dna"></i><span> 游戏</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">VOSR -- A Vision-Only Generative Model for Image Super-Resolution</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-06-03T07:59:04.000Z" title="发表于 2026-06-03 15:59:04">2026-06-03</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-06-03T10:39:41.108Z" title="更新于 2026-06-03 18:39:41">2026-06-03</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/">技术</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/AI/">AI</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/AI/CV/">CV</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/AI/CV/Super-Resolution/">Super Resolution</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/AI/CV/Super-Resolution/VOSR/">VOSR</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><p>原论文：<a target="_blank" rel="noopener" href="https://arxiv.org/pdf/2604.03225">https://arxiv.org/pdf/2604.03225</a></p>
+<p>这篇工作是CVPR 2026的文章之一，提出的实现和结构不算太复杂，但是个人认为作者在这篇文章中对SR任务的本质及其与生成任务的区别分析的非常透彻，也与笔者的部分观念不谋而合。非常推荐仔细阅读一下原论文，相信能让你对SR有更深的理解。</p>
+<h1 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h1><p>目前SOTA的SR模型，基本上都是从 generic T2I generator 出发，利用T2I 生成模型具备的大量真实图像先验来生成具备极佳细节的HR图像，这些方法通过prompt exacting，adapter等方法将LR转换为某种condition输入到T2I生成模型的DiT中。尽管有效，这些⽅法是适配 generic T2I generator 来处理 LR input，⽽不是直接为 detail generation 训练 restoration model，也就是说，不是<strong>原生SR模型（native SR model）</strong>。生成模型和SR模型一个本质的区别在于，生成模型是从一个毫无任何信息或与HR关联的纯noise分布开始，建模一个到HR分布的flow，而SR任务则完全不一样，LR分布本身实际上具备与HR分布的强关联，它们之间应该存在某种内在耦合联系，LR相对HR是位于较低维的空间中的，那么LR分布在某种意义上可以看作HR分布中的一张manifold或skeleton。T2I SR model能生成细节和感知极佳的SR图片，但对于 SR，仅仅 perceptually realistic 是不够的；restored details 还必须 faithful to the LR observation，T2I models 的 multi-modal pre-training 本质通过 text 或 text-aligned representations 引⼊ semantics，增加 detail hallucination ⻛险。即使这些 cues 源⾃ LR input 本身，它们仍然通过 text-conditioned generative path 注⼊，这⼀ path 往往着重于语义信息，而在空间解耦上是粗糙且与LR脱节的。</p>
+<p>因此，VOSR试图提出⼀个纯 vision-based generative model，在不依赖 multimodal pre-training 的情况下直接为 restoration 训练，以媲美 T2I-based SR models的效果。这里的vision-only强调模型只用视觉数据来训练和提供条件，包括 synthesized LR-HR pairs 和来⾃vision encoders 的 auxiliary features，不使用文本-图像配对监督，不依赖文本语义路径，不使用文本-图像数据集或T2I预训练多模态模型。VOSR 不模仿 T2I training paradigm，⽽遵循真正的 native restoration-oriented design。</p>
+<p>简单来讲，VOSR有以下三点贡献：</p>
+<ol>
+<li>引⼊ vision semantic condition，它使⽤ DINO  等 pretrained vision encoders 直接从 LR image 的visual domain 提取语义丰富的 features。不同于 text-aligned semantics，这些 features 与 input 紧密grounded，更适合解决 fine-grained structural 和 texture ambiguities。</li>
+<li>为 vision-only restoration problems 重新设计适配的 classifier-free guidance (CFG)。CFG技术常被用于T2I生成模型中，直接采⽤标准 fully unconditional auxiliary branch 对 SR来说是次优的：⼀旦 LR condition 被完全移除，auxiliary branch 必须从头学习 generic generation，⽽ conditional branch 则承担 input controllability。这种 role split 在 restoration 中难以优化，且学习不佳的 unconditional branch 会破坏 generation quality，同时为 restoration-oriented guidance 提供较弱 reference。因此，我们提出⼀种 restoration-oriented guidance，⽤ partially conditioned branch 替换 CFG 中的 unconditional branch。具体而言，保留 weak LR structural cues，同时丢弃 high-level semantics。这使 auxiliary branch 具有 generative 能力，⼜明确 anchored 到 input，使 resulting guidance direction restoration-oriented。因此，VOSR 强化 input-consistent restoration，⽽不是放⼤ generic generative preference。与T2I模型的CFG相反，较⼤的 guidance scales 通过将 predictions 推近 fully LR-conditioned branch 来偏向 fidelity，⽽较⼩ scales 允许通过偏向 partially conditioned branch 来获得更强 generation。</li>
+<li>⾸先训练 multi-step VOSR model，然后将其蒸馏为 one-step variant ⽤于快速部署。结果表明，⼀个restoration-oriented、vision-only framework 可以在没有 multimodal pretraining 的情况下，同时提供强perceptual quality、practical efficiency 和低得多的 training cost。</li>
+</ol>
+<h2 id="“相关工作”的takeaways"><a href="#“相关工作”的takeaways" class="headerlink" title="“相关工作”的takeaways"></a>“相关工作”的takeaways</h2><ol>
+<li>使用l1 loss或pixel-wise objectives训练，可以实现强 distortion-based measures（例如 PSNR），但会导致过于平滑的细节，引入感知损失或对抗损失，则分别具有伪影和优化不稳定的问题。</li>
+<li>纯vision-only SR方案天然与 restoration 对⻬，因为 generation 直接由 degraded input 驱动。然⽽，现有 vision-only generative SR methods 主要通过来⾃ LR input 的 structural cues 来 condition restoration，⽽没有显式引⼊ semantic guidance。在 severe degradation 下，这种 conditioning 通常不能提供⾜够 high-level information。换⾔之，vision-only SR 的限制不在于其 task formulation，⽽在于其缺乏⾜够强的 semantic abstraction 和 restoration-oriented guidance。</li>
+<li>T2I SR方案受益于从 massive image-text corpora 中学习到的强priors，并经常实现令⼈印象深刻的 perceptual quality。典型设计通过 prompts、ControlNet-like branches、adapters 或 text-aligned features 注⼊ LR information。这些方法不够native to SR，不是直接训练 restoration model，⽽是约束 generic image generator 符合 LR image。虽然它们在利⽤ pre-trained image priors ⽅面⾮常有效，但在 generic image generation 与 faithful restoration 之间引⼊ structural tension。此外，这些⽅法使⽤的 semantic cues 通常表示在 text 或 text-aligned spaces 中，它们与 pixel-level image details 对⻬时 spatially coarse。另外，这⼀范式继承了 multimodal foundation models 的⾼ training 和deployment cost。</li>
+<li>⼀⽅⾯，vision-only SR 天然 grounded in degraded input，并更好对⻬ restoration objective，但其generative capability 受 severe degradation 下 weak semantic abstraction 限制。另⼀⽅面，T2I-based SR 提供强 image priors，但其 generic multimodal generation framework 并⾮ restoration-native，且经常受pretrained backbone model size 约束，使 lightweight、budget-aware restoration design 具有挑战性。能否训练⼀个 generative SR model，使其在保持完全 grounded in input LR image 的同时，直接在 visual domain 中引⼊更强 semantics？这种generative SR 理想上应同时⽀持 high perceptual quality 和 efficient inference。VOSR就是在这样的背景下开发出的框架。</li>
+</ol>
+<h1 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h1><p><img src="/img/vosr1.png" alt="alt text"><br>如图，依然使用multi-steps v-pred latent DiT架构。在进入DiT前，将noisy HR latent与LR latent在channel维concat作为DiT输入，这一操作是LR的structural embedding，通过concat，LR的结构信息被强绑定在模型中。同时，将LR经过vision encoder提取出的semantic feature map通过<strong>cross attention而不是AdaLN</strong>的方式注入到DiT中，与一般的AdaLN conditioning相比，这是一种更直接，更强的注入方式。该semantic conditioning在partially conditioned branch中不使用，而在fully conditioned branch中使用，从而形成了一种专门适配SR任务的CFG设计。</p>
+<h1 id="框架"><a href="#框架" class="headerlink" title="框架"></a>框架</h1><p>SR 的⽬标是恢复⼀个 perceptually realistic 且 faithful to the input 的 high-resolution image 。不同于 text-to-image generation，SR 是 purely vision-conditioned。</p>
+<h2 id="Vision-Semantic-Condition"><a href="#Vision-Semantic-Condition" class="headerlink" title="Vision Semantic Condition"></a>Vision Semantic Condition</h2><p>low-level structural conditioning 和 high-level visual semantic guidance：将 LR image 编码到同⼀个 latent space 中，作为 spatially aligned structural condition 来保留 content 和 layout，并从 pretrained vision encoder 提取 semantic features 作为 visual semantic guidance，为 detail generation 提供语义丰富且空间 grounded 的 cues。</p>
+<p>现有 vision-only generative SR models  主要依赖来自 LR input 的 structural cues。然而，在 severe degradation 下，structural conditioning 单独可能不足，因为 LR observation 允许多个 plausible HR reconstructions，导致 semantic ambiguity。因此，VOSR 采用 two-branch conditioning design，结合 LR structure 与 semantic information。</p>
+<p>具体而言，structural branch 使用与将 HR images 映射到 latent space 相同的 VAE encoder $\mathcal{E}$ 对 LR image 进行编码，产生 structural condition $c_{\mathrm{str}} = \mathcal{E}(I_{\mathrm{LR}})$ 以保持 spatial content。并行地，pretrained vision encoder $\mathcal{V}$，例如 DINO，提取 semantic condition $c_{\mathrm{sem}} = \mathcal{V}(I_{\mathrm{LR}})$。不同于 text 或 text-aligned representations，$c_{\mathrm{sem}}$ 完全在 visual domain 中提取，更适合 fine-grained restoration。我们的 denoising backbone 是 diffusion transformer，它以 noisy HR latent $z_t$ 和 timestep embedding 作为输入。Structural condition $c_{\mathrm{str}}$ 作为 spatially aligned latent conditioning 被注入，而 semantic condition $c_{\mathrm{sem}}$ 通过 cross-attention 引入以提供 high-level context。以这种方式，structural features 保持 spatial fidelity，而 semantic features 在 detail synthesis 期间解决 ambiguity。该设计完全在 visual domain 内引入 high-level semantics，避免 SR 中的 text 或 text-aligned conditioning。</p>
+<h2 id="Restoration-Oriented-Guidance"><a href="#Restoration-Oriented-Guidance" class="headerlink" title="Restoration-Oriented Guidance"></a>Restoration-Oriented Guidance</h2><p>对于 restoration，auxiliary guidance branch 的设计尤其重要，因为 SR 不是 text-conditioned generation，⽽是 input-anchored generation。</p>
+<p>先前的CFG形如 $v_{\mathrm{cfg}} = v_{\mathrm{uncond}} + s(v_{\mathrm{cond}} - v_{\mathrm{uncond}})$，其中 $v_{\mathrm{cond}}$ 和 $v_{\mathrm{uncond}}$ 分别表示 conditional 和 unconditional predictions，$s$ 是 guidance scale。该 formulation 在 T2I generation 中非常有效，其中 unconditional branch 为无 text control 的 generic image generation 提供自然 reference。然而，对于从头训练的 SR，这种 fully unconditional branch 并不那么合适。一旦 LR input 被完全移除，auxiliary branch 必须学习 generic image generation，而 conditional branch 单独负责保持 input fidelity。这种角色分离使 image restoration 难以优化，并且 weak unconditional learning 可能提供较差 guidance reference。</p>
+<p>基于这一观察，我们用 partially conditioned branch 替换 unconditional branch。目标并不是任意丢弃 conditions，而是构建一个与 fully conditioned branch 不同且定义有意义 restoration-oriented guidance direction 的 auxiliary branch。具体而言，我们不移除所有 conditions，而是在丢弃 semantic guidance 的同时保留 weakened LR structural cues。与同时使用 structural 和 semantic conditions ($c_{\mathrm{str}}, c_{\mathrm{sem}}$) 的 fully conditioned branch 相比，partially conditioned branch 只保留 scaled structural condition 并移除 semantic conditioning。令 $\alpha \in (0, 1)$ 表示 structural retention factor。两个 branches 定义为：$v_{\mathrm{cond}} = v_\theta(z_t, t, c_{\mathrm{str}}, c_{\mathrm{sem}})$ 和 $v_{\mathrm{pcond}} = v_\theta(z_t, t, \alpha c_{\mathrm{str}}, \varnothing)$ ，其中 $\varnothing$ 表示 semantic conditioning 缺失。这样，两个 branches 都保持 anchored to LR input，而它们的差异捕获 stronger structure 和 semantic guidance 的影响。训练期间，我们随机采样 fully conditioned mode 或 partially conditioned mode，使 shared model 在 unified objective 下学习两种 behaviors。遵循 velocity parameterization 中的 standard latent diffusion training，multi-step objective 为：</p>
+<script type="math/tex; mode=display">\mathcal{L}_{\mathrm{ms}} = \mathbb{E}_{z_0, z_1, t, \kappa} \left[ \left\| v_\theta(z_t, t, \kappa) - v_t \right\|_2^2 \right],</script><p>其中 $v_t = z_1 - z_0$ 是 ground-truth velocity target，$\kappa$ 表示 sampled conditioning mode，即 fully conditioned branch ($c_{\mathrm{str}}, c_{\mathrm{sem}}$) 或 partially conditioned branch ($\alpha c_{\mathrm{str}}, \varnothing$)。</p>
+<p>测试时，我们应用 restoration-oriented guidance:</p>
+<script type="math/tex; mode=display">v_{\mathrm{cfg}} = v_{\mathrm{pcond}} + s(v_{\mathrm{cond}} - v_{\mathrm{pcond}}),</script><p>其中 $s$ 是 guidance scale。不同于 standard CFG，这里的 auxiliary branch 仍然 weakly conditioned on LR input。因此，guidance direction 并不是从 unconditional generation 移向 conditioned restoration；相反，它从 weakly anchored branch 移向 strongly anchored one。随着 $s$ 增加，prediction 被驱动得更接近 fully conditioned branch，从而强化 input consistency。随着 $s$ 减小，prediction 偏向 partially conditioned branch，其中 semantic conditioning 被移除且 structural conditioning 被削弱，从而允许更大的 plausible detail generation 空间。该行为与 T2I-based SR中常用 CFG 显著不同，后者可写为：</p>
+<script type="math/tex; mode=display">\begin{aligned} v_{\mathrm{cfg}} = &v_\theta(z_t, t, c_{\mathrm{lr}}, \varnothing) \\ &+ s \left( v_\theta(z_t, t, c_{\mathrm{lr}}, c_{\mathrm{sem}}) - v_\theta(z_t, t, c_{\mathrm{lr}}, \varnothing) \right), \end{aligned}</script><p>其中 LR control 由两个 branches 共享。Guidance direction 主要反映额外 semantic priors 的注入，并且增大 guidance scale 通常会放大 generative semantics。相反，在我们的 formulation 中，$s = 0$ 恢复 partially conditioned branch，$s = 1$ 恢复 fully conditioned branch。因此，较小 $s$ 倾向于产生更 generative 的结果，而较大 $s$ 偏向对 LR input 更好的 fidelity。这使我们的 VOSR restoration-oriented，在 input-anchored restoration space 中平衡 generation 和 fidelity。</p>
+<h2 id="⽤于⾼效推理的-One-Step-Distillation"><a href="#⽤于⾼效推理的-One-Step-Distillation" class="headerlink" title="⽤于⾼效推理的 One-Step Distillation"></a>⽤于⾼效推理的 One-Step Distillation</h2><p>distillation 只改变 sampling efficiency，⽽不改变 restoration formulation。经验上，recursive-consistency-based variant 对 SR 表现最佳，在 perceptual quality 与 structural fidelity 之间提供更好平衡。因此，我们在主要实验中采⽤该 variant。以这种⽅式，VOSR 在实现 efficient one-step inference 的同时，保留与 multi-step teacher 相同的 restoration-oriented formulation。</p>
+<h1 id="实验"><a href="#实验" class="headerlink" title="实验"></a>实验</h1><ol>
+<li><p>使⽤ Real-ESRGAN degradation pipeline  合成 LR-HR training pairs。VOSR 仅在 synthetic pairs 上训练，但在 synthetic 和real-world test sets 上评估，以评估 generalization。</p>
+</li>
+<li><p>总体⽽⾔，T2I-based methods 经常产⽣ visually sharp results，但在恢复需要 faithful to the LR input 的 fine structures 时不够可靠。相⽐之下，VOSR 持续恢复更多 local details，结构更清晰且hallucinations 更少</p>
+</li>
+</ol>
+<h1 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h1><p>VOSR重新审视SR任务的本质，通过SR native的设计，在 perceptual quality、faithfulness 和 efficiency 上取得强性能，并且VOSR 的 training expenses 低得多，并⽀持 one-step inference，验证了 vision-only generative modeling 是 real-world SR 中 T2I adaptation 的强替代⽅案。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://www.cosmosh.ink">Qz</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://www.cosmosh.ink/2026/06/03/VOSR/">https://www.cosmosh.ink/2026/06/03/VOSR/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://www.cosmosh.ink" target="_blank">Qz's Blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/CV/">CV</a><a class="post-meta__tags" href="/tags/SR/">SR</a><a class="post-meta__tags" href="/tags/VOSR/">VOSR</a></div><div class="post-share"><div class="social-share" data-image="/img/avatar.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/05/29/%E8%BF%91%E6%9C%9F%E8%AE%BA%E6%96%87%E7%9A%84takeaway/" title="近期论文的takeaway"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">近期论文的takeaway</div></div><div class="info-2"><div class="info-item-1">L2P: UNLOCKING LATENT POTENTIAL FOR PIXEL GENERATION 传统LDM的瓶颈很大程度上在于VAE encoder和VAE decoder，VAE参数量大，推理速度慢，且decoder无法重建出细节较好的图像。直接训练一个pixel space的模型可以解决这些问题，但是pixel space对GPU和数据的要求很高。能不能利用LDM模型的diffusion组件中的先验知识，训练一个pixel space的模型呢？L2P就是这么做的。 L2P直接使用LDM的DiT，从而能够有效使用DiT权重中的大量先验知识。它去掉了VAE encoder和decoder，通过增加patch的大小，使得latent space中的DiT能直接用于pixel space。使用一个轻量的U-net decoder接在DiT最后作为像素生成器。训练时直接在像素空间计算v-loss，冻结 DiT backbone 的中间层，并只训练浅层输⼊和输出层（初始输⼊投影层、DiT 的前n个和后n个 blocks，以及新添加的 Detailer...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/03/20/SRGAN-ESRGAN-RealESRGAN/" title="SRGAN,ESRGAN,RealESRGAN"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-20</div><div class="info-item-2">SRGAN,ESRGAN,RealESRGAN</div></div><div class="info-2"><div class="info-item-1">论文：  SRGAN：https://arxiv.org/abs/1609.04802 ESRGAN：https://arxiv.org/abs/1809.00219 RealESRGAN：https://arxiv.org/abs/2107.10833  参考：https://zhuanlan.zhihu.com/p/595533046      https://zhuanlan.zhihu.com/p/542750836 SRGANSRGAN，即Super-Resolution Generative Adversarial Network，是一种基于生成对抗网络（GAN）的图像超分辨率方法。SRGAN的核心思想是通过一个生成器网络，输入低分辨率的图像，生成高分辨率图像，并使用一个判别器网络来评估生成图像的质量，从而使生成的图像尽可能接近真实的高分辨率图像。与传统的GAN不同，SRGAN引入了内容损失（Content Loss），该损失函数不仅考虑像素级的差异，还考虑了图像的高层次特征，从而能够生成更具视觉质量的图像。  l^{SR} = \underbrace{...</div></div></div></a><a class="pagination-related" href="/2026/03/21/USRNet/" title="USRNet"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-21</div><div class="info-item-2">USRNet</div></div><div class="info-2"><div class="info-item-1">论文：http://openaccess.thecvf.com/content_CVPR_2020/papers/Zhang_Deep_Unfolding_Network_for_Image_Super-Resolution_CVPR_2020_paper.pdf参考：https://zhuanlan.zhihu.com/p/140507840 前言图像超分模型的目标，就是将一张以某种方式退化的图像还原回原始图像。图像退化的过程是不可逆的，必然会损失一些像素级的信息（由此就引出了不同模型的不同优化目标，例如有的模型追求数学上更接近原始图，如PSNR，有的模型则追求感知上更接近原始图，如GAN）。一般而言，广义降质过程可以通过如下公式进行刻画：  y = (x \otimes k)\downarrow_s + n其中$y$是退化图像，$x$是原始图像，$k$是卷积核（模糊核），$\otimes$表示卷积操作，$\downarrow_s$表示下采样操作，$n$表示噪声。根据模糊核k，噪声水平$\sigma$，与下采样操作s的已知与否，图像超分任务分为非盲超分（non-blind...</div></div></div></a><a class="pagination-related" href="/2026/04/28/%E5%87%A0%E7%AF%87%E6%96%87%E7%AB%A0%E7%9A%84takeaway/" title="几篇文章的takeaway"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-04-28</div><div class="info-item-2">几篇文章的takeaway</div></div><div class="info-2"><div class="info-item-1">SR3 SR3将DDPM应用于图像超分辨率任务，取得了很好的效果。具体来说，SR3现将低分辨率图像通过简单的插值方法（如bicubic）放大到目标分辨率，然后在DDPM的每一步，将这个插值后的低分辨率图像concat到带噪声图像xt的通道维度上，交由网络处理。 SR3在每一步t没有使用DDPM原始的$\bar\alpha_t$，而是从$\bar\alpha\sim...</div></div></div></a><a class="pagination-related" href="/2026/05/29/%E8%BF%91%E6%9C%9F%E8%AE%BA%E6%96%87%E7%9A%84takeaway/" title="近期论文的takeaway"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-29</div><div class="info-item-2">近期论文的takeaway</div></div><div class="info-2"><div class="info-item-1">L2P: UNLOCKING LATENT POTENTIAL FOR PIXEL GENERATION 传统LDM的瓶颈很大程度上在于VAE encoder和VAE decoder，VAE参数量大，推理速度慢，且decoder无法重建出细节较好的图像。直接训练一个pixel space的模型可以解决这些问题，但是pixel space对GPU和数据的要求很高。能不能利用LDM模型的diffusion组件中的先验知识，训练一个pixel space的模型呢？L2P就是这么做的。 L2P直接使用LDM的DiT，从而能够有效使用DiT权重中的大量先验知识。它去掉了VAE encoder和decoder，通过增加patch的大小，使得latent space中的DiT能直接用于pixel space。使用一个轻量的U-net decoder接在DiT最后作为像素生成器。训练时直接在像素空间计算v-loss，冻结 DiT backbone 的中间层，并只训练浅层输⼊和输出层（初始输⼊投影层、DiT 的前n个和后n个 blocks，以及新添加的 Detailer...</div></div></div></a><a class="pagination-related" href="/2026/04/22/DDIM/" title="DDIM"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-04-22</div><div class="info-item-2">DDIM</div></div><div class="info-2"><div class="info-item-1">参考：https://zhuanlan.zhihu.com/p/614147698      https://zhuanlan.zhihu.com/p/565698027     ...</div></div></div></a><a class="pagination-related" href="/2026/03/12/DDPM%E7%9A%84%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3/" title="DDPM的核心思想"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-12</div><div class="info-item-2">DDPM的核心思想</div></div><div class="info-2"><div class="info-item-1">本文旨在用最简短的篇幅，描述DDPM的核心思想与设计动机，仅作为日后回顾DDPM的一个记忆锚点，具体公式和代码请参考其它资料。本文尽可能省略一切数学推导，跳略的推导会标注出来。 参考：https://zhuanlan.zhihu.com/p/650394311      https://lilianweng.github.io/posts/2021-07-11-diffusion-models/ 生成模型的目标，就是从一张随机图像（如纯噪声）开始，生成一张“真实”的图像，这里的“真实”是指生成的图像符合实际图像的概率分布（例如，一个人拥有黄色或白色皮肤的概率是比较大的，但是拥有蓝色皮肤却是几乎不可能的）。尽管现在大多数生成模型都支持根据输入的文字生成对应内容的图片，但那也只是通过在模型的每个模块加上文字的特征表示而训练得到的，对模型的整体结构影响不大，因此本文主要介绍DDPM从噪声生图的核心思想。 DDPM（以及所有生成式模型）的优化目标是让模型产生的图片分布和真实图片分布尽量相似，那么就有了以下推导过程：  为了使模型产生的图片分布和真实图片分布尽可能相似，我们要求...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/avatar.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Qz</div><div class="author-info-description">Жизнь полюбить больше, чем смысл ее? — Непременно так, полюбить прежде логики...</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">33</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">41</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">31</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/Qz06"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/Qz06" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="/2791144859@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%BC%95%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">引言</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%80%9C%E7%9B%B8%E5%85%B3%E5%B7%A5%E4%BD%9C%E2%80%9D%E7%9A%84takeaways"><span class="toc-number">1.1.</span> <span class="toc-text">“相关工作”的takeaways</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%96%B9%E6%B3%95"><span class="toc-number">2.</span> <span class="toc-text">方法</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%A1%86%E6%9E%B6"><span class="toc-number">3.</span> <span class="toc-text">框架</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Vision-Semantic-Condition"><span class="toc-number">3.1.</span> <span class="toc-text">Vision Semantic Condition</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Restoration-Oriented-Guidance"><span class="toc-number">3.2.</span> <span class="toc-text">Restoration-Oriented Guidance</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%BD%A4%E4%BA%8E%E2%BE%BC%E6%95%88%E6%8E%A8%E7%90%86%E7%9A%84-One-Step-Distillation"><span class="toc-number">3.3.</span> <span class="toc-text">⽤于⾼效推理的 One-Step Distillation</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%AE%9E%E9%AA%8C"><span class="toc-number">4.</span> <span class="toc-text">实验</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%BB%93%E8%AE%BA"><span class="toc-number">5.</span> <span class="toc-text">结论</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/06/03/VOSR/" title="VOSR -- A Vision-Only Generative Model for Image Super-Resolution">VOSR -- A Vision-Only Generative Model for Image Super-Resolution</a><time datetime="2026-06-03T07:59:04.000Z" title="发表于 2026-06-03 15:59:04">2026-06-03</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/05/29/%E8%BF%91%E6%9C%9F%E8%AE%BA%E6%96%87%E7%9A%84takeaway/" title="近期论文的takeaway">近期论文的takeaway</a><time datetime="2026-05-29T11:39:25.000Z" title="发表于 2026-05-29 19:39:25">2026-05-29</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/05/16/Drifting-Model/" title="Drifting Model">Drifting Model</a><time datetime="2026-05-16T14:48:59.000Z" title="发表于 2026-05-16 22:48:59">2026-05-16</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/05/07/FD-loss-%E4%B8%80%E7%A7%8D%E6%96%B0%E7%9A%84%E4%BC%98%E5%8C%96%E7%9B%AE%E6%A0%87/" title="FD-loss:一种新的优化目标">FD-loss:一种新的优化目标</a><time datetime="2026-05-07T02:03:58.000Z" title="发表于 2026-05-07 10:03:58">2026-05-07</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/05/04/Mean-Flow/" title="Mean Flow">Mean Flow</a><time datetime="2026-05-04T06:31:26.000Z" title="发表于 2026-05-04 14:31:26">2026-05-04</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2019 - 2026 By Qz</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.3.0</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.3.3</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax/es5/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script></div><canvas class="fireworks" mobile="false"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/fireworks.min.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js"></script></div></div><script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":false},"log":false});</script></body></html>
